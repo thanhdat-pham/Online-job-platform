@@ -34,7 +34,7 @@ class CandidateProfile(models.Model):
         "Tập tin CV (PDF/Word)", 
     folder='candidate_cvs/', 
     resource_type='raw', 
- 
+    null=True, blank=True
     )
     updated_date = models.DateTimeField(auto_now=True)
     class Meta:
