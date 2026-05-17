@@ -39,6 +39,14 @@ class RegisterSerializer(UserBaseSerializer):
             raise serializers.ValidationError("Vai trò không hợp lệ.")
             
         return role_upper
+    def validate(self, attrs):
+        role = attrs.get('role', '').upper()
+        avatar = attrs.get('avatar')
+        if role == 'CANDIDATE' and not avatar:
+            raise serializers.ValidationError({"avatar": "Ứng viên phải cung cấp ảnh đại diện."})
+        if role == 'EMPLOYER' and not avatar:
+            raise serializers.ValidationError({"avatar": "Nhà tuyển dụng phải cung cấp ảnh người đại diện."})
+        return attrs
 
     def create(self, validated_data):
         user = User(**validated_data)
