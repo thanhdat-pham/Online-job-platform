@@ -11,7 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-tm$wdoxt_)=7rkk4b=+7ltls!&er!kyvkc+tq$!y0dxpty%m2r'
-
+SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -47,13 +49,14 @@ INSTALLED_APPS = [
     'apps',
     'cloudinary',
 ]
+
 CKEDITOR_UPLOAD_PATH = "images/ckeditors/"
 AUTH_USER_MODEL = 'apps.User'
 import cloudinary.api
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dyprgmert', 
-    'API_KEY': '276336176116345',
-    'API_SECRET': 'tVpRO0yVal0SRnd8ULdC0zB4gOA'
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
 }
 cloudinary.config(
     cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
@@ -105,10 +108,10 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
     'ENGINE': 'django.db.backends.mysql',
-    'NAME': 'job_platform_db',
-    'USER': 'root',
-    'PASSWORD': 'Thanhdat2311@',
-    'HOST': '' # mặc định localhost
+    'NAME': os.getenv('DB_NAME'),
+    'USER': os.getenv('DB_USER'),
+    'PASSWORD': os.getenv('DB_PASSWORD'),
+    'HOST': os.getenv('DB_HOST', 'localhost'), # mặc định localhost
 }
 }
 
@@ -154,5 +157,5 @@ STATIC_URL = 'static/'
 # Khi đóng trình duyệt, Session sẽ hết hạn ngay lập tức
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
-CLIENT_ID = '5JGm9NcvUMWqIJqB1FI0odTwd4oy4vzk2Q0eR6Vr'
-CLIENT_SECRET = 'pbkdf2_sha256$1200000$pEMCYTxq9YXCHtZHDztNhC$R8CsGsezO6gox2UEE/MiAbq6Uh0CTz6xun18/ki0Lfw='
+CLIENT_ID = os.getenv('OAUTH2_CLIENT_ID')
+CLIENT_SECRET = os.getenv('OAUTH2_CLIENT_SECRET')

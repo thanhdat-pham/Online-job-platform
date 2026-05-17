@@ -24,6 +24,11 @@ class CandidateViewSet(viewsets.ViewSet):
 
     @action(methods=['post'], detail=False, url_path='apply-job')
     def apply_job(self, request):
+        if not hasattr(request.user, 'candidate_profile'):
+            return Response(
+                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
+                status=status.HTTP_403_FORBIDDEN
+        )
         candidate = request.user.candidate_profile
         job_id = request.data.get('job')
         if not Job.objects.filter(id=job_id).exists():
@@ -42,6 +47,11 @@ class CandidateViewSet(viewsets.ViewSet):
 
     @action(methods=['get'], detail=False, url_path='my-applications')
     def my_applications(self, request):
+        if not hasattr(request.user, 'candidate_profile'):
+            return Response(
+                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         candidate = request.user.candidate_profile
         
         applications = Application.objects.filter(candidate=candidate).select_related('job').order_by('-applied_at')
