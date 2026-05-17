@@ -5,7 +5,7 @@ class CompanySerializer(serializers.ModelSerializer):
     logo = serializers.ImageField(required=True, allow_null=False)
     class Meta:
         model = Company
-        fields = ["id", "name", "address", "created_date"]
+        fields = ["id", "name", "address", "logo" "created_date"]
         read_only_fields = ["id", "created_date"]
     
     def to_representation(self, instance):
