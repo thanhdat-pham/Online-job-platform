@@ -7,10 +7,12 @@ from apps.serializers.jobs_serializer import JobSerializer
 from apps.models.candidates import Application
 from apps.serializers.employers_serializer import EmployerProfileSerializer, CompanySerializer
 from apps.serializers.candidates_serializer import ApplicationSerializer
+from apps.permissions import IsVerifiedUser
+from apps.paginators import JobPaginator
 
 class EmployerJobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,  IsVerifiedUser]
     def get_employer(self):
         user = self.request.user
         if hasattr(user, 'employer_profile'):
@@ -45,10 +47,14 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         if not employer:
             return Response({"detail": "Chức năng này chỉ dành cho Nhà tuyển dụng."}, status=status.HTTP_403_FORBIDDEN)
         new_status = request.data.get('status')
-        if new_status not in ['approved', 'rejected']:
-            return Response({"detail": "Trạng thái không hợp lệ. Chỉ nhận 'approved' hoặc 'rejected'."}, status=status.HTTP_400_BAD_REQUEST)
+        if new_status not in ['reviewed', 'interviewing', 'accepted', 'rejected']:
+            return Response({"detail": "Trạng thái không hợp lệ."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        application_id = request.data.get('application_id')
+        if not application_id:
+            return Response({"detail": "Thiếu application_id."}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            application = Application.objects.get(pk=pk, job__Employer=employer)
+            application = Application.objects.get(pk=application_id, job__Employer=employer)
         except Application.DoesNotExist:
             return Response({"detail": "Không tìm thấy đơn ứng tuyển hợp lệ thuộc quyền quản lý."}, status=status.HTTP_404_NOT_FOUND)
         application.status = new_status
@@ -61,7 +67,8 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
     
 class JobViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Job.objects.all().order_by('-created_at')
-    serializer_class = JobSerializer
+    serializer_class = JobSerializer    
+    pagination_class = JobPaginator
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
@@ -90,6 +97,17 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
 
         if salary:
             queryset = queryset.filter(salary_min__lte=salary, salary_max__gte=salary)
+
+            
+        ordering = request.query_params.get('ordering', '-created_at')
+        ALLOWED_ORDERING = ['salary_min', '-salary_min', 'created_at', '-created_at']
+        if ordering in ALLOWED_ORDERING:
+            queryset = queryset.order_by(ordering)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

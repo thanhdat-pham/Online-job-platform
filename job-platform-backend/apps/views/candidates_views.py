@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from apps.models.candidates import CandidateProfile, Application
+from apps.models.jobs import Job
 from apps.serializers.candidates_serializer import CandidateProfileSerializer, ApplicationSerializer
 
 class CandidateViewSet(viewsets.ViewSet):
