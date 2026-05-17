@@ -2,9 +2,17 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q
 from .user import User
+from cloudinary.models import CloudinaryField
+from django.core.validators import FileExtensionValidator
 class Company(models.Model):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
+    logo = CloudinaryField(
+        'logo',
+        null=True,
+        blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])]
+    )
     created_date = models.DateTimeField(auto_now_add=True)
     
     class Meta:

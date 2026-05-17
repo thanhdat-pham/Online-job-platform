@@ -22,6 +22,7 @@ from pathlib import Path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+
 schema_view = get_schema_view(
     openapi.Info(
         title="Online Job Platform API",
@@ -37,6 +38,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('', include('apps.urls')),
     path('admin/', admin.site.urls),
+     path('auth/register/employer/', EmployerRegisterView.as_view(), name='employer-register'),
     re_path(r'^ckeditor/', include('ckeditor_uploader.urls')),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
             schema_view.without_ui(cache_timeout=0),
