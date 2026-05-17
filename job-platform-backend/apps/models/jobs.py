@@ -23,7 +23,7 @@ class Job(models.Model):
         ("senior", "Trên 5 năm kinh nghiệm"),
     ]
     
-    Employer = models.ForeignKey(
+    employer = models.ForeignKey(
         Employer,
         on_delete=models.CASCADE,
         related_name="jobs"

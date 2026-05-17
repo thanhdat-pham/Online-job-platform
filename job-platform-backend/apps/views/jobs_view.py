@@ -22,10 +22,10 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         employer = self.get_employer()
         if not employer:
             return Job.objects.none()
-        return Job.objects.filter(Employer=employer).order_by('-created_at')
+        return Job.objects.filter(employer=employer).order_by('-created_at')
     def perform_create(self, serializer):
         employer = self.get_employer()
-        serializer.save(Employer=employer)
+        serializer.save(employer=employer)
 
     @action(methods=['get'], detail=True, url_path='applications')
     def get_job_applications(self, request, pk=None):
@@ -34,7 +34,7 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Chức năng này chỉ dành cho Nhà tuyển dụng."}, status=status.HTTP_403_FORBIDDEN)
         
         try:
-            job = Job.objects.get(pk=pk, Employer=employer)
+            job = Job.objects.get(pk=pk, employer=employer)
         except Job.DoesNotExist:
             return Response({"detail": "Không tìm thấy bài tuyển dụng hợp lệ của bạn."}, status=status.HTTP_404_NOT_FOUND)
         applications = Application.objects.filter(job=job).select_related('candidate').order_by('-applied_at')
@@ -54,7 +54,7 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         if not application_id:
             return Response({"detail": "Thiếu application_id."}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            application = Application.objects.get(pk=application_id, job__Employer=employer)
+            application = Application.objects.get(pk=application_id, job__employer=employer)
         except Application.DoesNotExist:
             return Response({"detail": "Không tìm thấy đơn ứng tuyển hợp lệ thuộc quyền quản lý."}, status=status.HTTP_404_NOT_FOUND)
         application.status = new_status
@@ -86,7 +86,7 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = self.get_queryset()
         if search_query:
             queryset = queryset.filter(
-                Q(title__icontains=search_query) | Q(Employer__company__name__icontains=search_query)
+                Q(title__icontains=search_query) | Q(employer__company__name__icontains=search_query)
             )
 
         if category_id:

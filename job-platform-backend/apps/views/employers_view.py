@@ -58,17 +58,4 @@ class EmployerProfileViewSet(viewsets.ViewSet):
             "data": serializer.data
         })
     
-    @action(methods=['post'], detail=False, url_path='select-company')
-    def select_company(self, request):
-        employer = self.get_object()
-        company_id = request.data.get('company_id')
-        try:
-            chosen_company = Company.objects.get(id=company_id)
-            employer.company = chosen_company
-            employer.save()
-            return Response({
-                "detail": "Liên kết công ty thành công!",
-                "data": CompanySerializer(chosen_company).data
-            }, status=status.HTTP_200_OK)
-        except Company.DoesNotExist:
-            return Response({"detail": "Công ty không tồn tại!"}, status=status.HTTP_404_NOT_FOUND)
+   

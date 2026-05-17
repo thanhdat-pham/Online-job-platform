@@ -14,7 +14,7 @@ admin.site.register(JobCategory)
 
 @admin.register(Job)
 class JobAdmin(admin.ModelAdmin):
-    list_display = ('title', 'Employer', 'location', 'deadline', 'created_at')
+    list_display = ('title', 'employer', 'location', 'deadline', 'created_at')  # Employer → employer
     list_filter = ('experience_level', 'category')
     search_fields = ('title', 'location')
     date_hierarchy = 'created_at'

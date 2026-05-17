@@ -2,12 +2,11 @@ from django.db import models
 from cloudinary.models import CloudinaryField
 from apps.models.jobs import Job
 from django.conf import settings
-from django.db.models import Q
 class CandidateProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete= models.CASCADE,
-        limit_choices_to=Q(role='CANDIDATE', candidate_profile__isnull=True),
+        limit_choices_to={'role': 'CANDIDATE'},
         related_name='candidate_profile',
         primary_key=True
 

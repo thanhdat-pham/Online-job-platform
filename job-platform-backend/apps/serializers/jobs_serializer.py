@@ -16,8 +16,16 @@ class JobCategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class JobSerializer(serializers.ModelSerializer):
-    Employer = JobEmployerSerializer(read_only=True)
+    employer = JobEmployerSerializer(read_only=True)
     category = JobCategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=JobCategory.objects.all(),
+        source='category',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = Job
         fields = [

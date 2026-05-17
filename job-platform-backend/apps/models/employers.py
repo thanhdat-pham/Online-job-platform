@@ -35,7 +35,7 @@ class Employer(models.Model):
     user = models.OneToOneField(
         User, 
         on_delete=models.CASCADE, 
-        limit_choices_to=Q(role='EMPLOYER', employer_profile__isnull=True),
+         limit_choices_to={'role': 'EMPLOYER'},
         related_name='employer_profile',
         primary_key=True
     )
