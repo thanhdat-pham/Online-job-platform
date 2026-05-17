@@ -61,6 +61,11 @@ class CandidateViewSet(viewsets.ViewSet):
 
     @action(methods=['delete'], detail=True, url_path='cancel-application')
     def cancel_application(self, request, pk=None):
+        if not hasattr(request.user, 'candidate_profile'):
+            return Response(
+                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         candidate = request.user.candidate_profile
         try:
             application = Application.objects.get(pk=pk, candidate=candidate)
