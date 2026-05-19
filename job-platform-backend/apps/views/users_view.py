@@ -78,3 +78,12 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
             {"detail": "Đã đăng xuất tài khoản thành công khỏi hệ thống!"},
             status=status.HTTP_200_OK
         )
+    @action(
+    methods=['get'],
+    url_path='me',
+    detail=False,
+    permission_classes=[permissions.IsAuthenticated]
+    )
+    def me(self, request):
+        from apps.serializers.user_serializer import UserSerializer
+        return Response(UserSerializer(request.user).data)
