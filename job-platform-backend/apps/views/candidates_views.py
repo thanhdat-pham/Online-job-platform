@@ -4,9 +4,10 @@ from rest_framework.response import Response
 from apps.models.candidates import CandidateProfile, Application
 from apps.models.jobs import Job
 from apps.serializers.candidates_serializer import CandidateProfileSerializer, ApplicationSerializer
+from apps.permissions import IsCandidate
 
 class CandidateViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsCandidate]
 
     @action(methods=['get', 'patch'], detail=False, url_path='current-user')
     def current_user_profile(self, request):
@@ -24,11 +25,7 @@ class CandidateViewSet(viewsets.ViewSet):
 
     @action(methods=['post'], detail=False, url_path='apply-job')
     def apply_job(self, request):
-        if not hasattr(request.user, 'candidate_profile'):
-            return Response(
-                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
-                status=status.HTTP_403_FORBIDDEN
-        )
+        
         candidate = request.user.candidate_profile
         job_id = request.data.get('job')
         if not Job.objects.filter(id=job_id).exists():
@@ -47,11 +44,7 @@ class CandidateViewSet(viewsets.ViewSet):
 
     @action(methods=['get'], detail=False, url_path='my-applications')
     def my_applications(self, request):
-        if not hasattr(request.user, 'candidate_profile'):
-            return Response(
-                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+       
         candidate = request.user.candidate_profile
         
         applications = Application.objects.filter(candidate=candidate).select_related('job').order_by('-applied_at')
@@ -61,11 +54,7 @@ class CandidateViewSet(viewsets.ViewSet):
 
     @action(methods=['delete'], detail=True, url_path='cancel-application')
     def cancel_application(self, request, pk=None):
-        if not hasattr(request.user, 'candidate_profile'):
-            return Response(
-                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        
         candidate = request.user.candidate_profile
         try:
             application = Application.objects.get(pk=pk, candidate=candidate)

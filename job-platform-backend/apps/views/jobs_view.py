@@ -7,12 +7,12 @@ from apps.serializers.jobs_serializer import JobSerializer
 from apps.models.candidates import Application
 from apps.serializers.employers_serializer import EmployerProfileSerializer, CompanySerializer
 from apps.serializers.candidates_serializer import ApplicationSerializer
-from apps.permissions import IsVerifiedUser
+from apps.permissions import IsVerifiedEmployer
 from apps.paginators import JobPaginator
 
 class EmployerJobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
-    permission_classes = [permissions.IsAuthenticated,  IsVerifiedUser]
+    permission_classes = [IsVerifiedEmployer]
     def get_employer(self):
         user = self.request.user
         if hasattr(user, 'employer_profile'):

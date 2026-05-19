@@ -2,9 +2,10 @@ from rest_framework import viewsets, permissions, status, parsers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from apps.models import Employer, Company
+from apps.permissions import IsEmployer
 from apps.serializers.employers_serializer import EmployerProfileSerializer, CompanySerializer 
 class EmployerProfileViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsEmployer]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     def get_object(self):
         user = self.request.user
