@@ -1,8 +1,5 @@
 from django.db import models
-from django.conf import settings
-from django.db.models import Q
 from apps.models.employers import Employer
-from .user import User
 class JobCategory(models.Model):
     name = models.CharField(max_length=100,unique=True)
     
