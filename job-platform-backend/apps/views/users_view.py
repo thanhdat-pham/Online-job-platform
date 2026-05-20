@@ -34,7 +34,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
                     user = user_serializer.save()
                     Employer.objects.create(user=user, company=company)
             else:
-                # Tự nhập công ty mới — fix mapping tên field
+                # Tự nhập công ty mới
                 company_data = {
                     'name': request.data.get('company_name', ''),
                     'address': request.data.get('company_address', ''),
@@ -51,13 +51,18 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
                     user = user_serializer.save()
                     company = company_serializer.save(is_preset=False)
                     Employer.objects.create(user=user, company=company)
-        return Response(
-            {"detail": "Đăng ký thành công. Vui lòng chờ quản trị viên xác minh tài khoản."},
-            status=status.HTTP_201_CREATED
-        )
 
-        user_serializer.save()
-        return Response({"detail": "Đăng ký thành công!"}, status=status.HTTP_201_CREATED)
+
+            return Response(
+                {"detail": "Đăng ký thành công. Vui lòng chờ quản trị viên xác minh tài khoản."},
+                status=status.HTTP_201_CREATED
+            )
+
+        else:
+
+            user_serializer.save()
+            return Response({"detail": "Đăng ký thành công!"}, status=status.HTTP_201_CREATED)
+
 
     @action(methods=['get'], url_path='companies', detail=False, permission_classes=[permissions.AllowAny])
     def list_preset_companies(self, request):

@@ -13,6 +13,7 @@ const CANDIDATE_FIELDS = [
     { field: 'username', label: 'Tên đăng nhập', icon: 'account' },
     { field: 'password', label: 'Mật khẩu', icon: 'eye', secureTextEntry: true },
     { field: 'confirm', label: 'Xác nhận mật khẩu', icon: 'eye', secureTextEntry: true },
+    { field: 'phone_number', label: 'Số điện thoại', icon: 'phone' },
 ];
 
 const Register = () => {
@@ -64,7 +65,15 @@ const Register = () => {
             await Apis.post(endpoints['register'], fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             Alert.alert("Thành công", "Đăng ký thành công!", [{ text: 'Đăng nhập', onPress: () => nav.navigate('login') }]);
         } catch (ex) {
-            setErr("Đăng ký thất bại.");
+            const errData = ex?.response?.data;
+            if (errData && typeof errData === 'object') {
+                const messages = Object.entries(errData)
+                    .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+                    .join('\n');
+                setErr(messages);
+            } else {
+                setErr("Đăng ký thất bại. Vui lòng thử lại.");
+            }
         } finally {
             setLoading(false);
         }
