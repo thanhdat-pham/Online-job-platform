@@ -18,6 +18,10 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         if hasattr(user, 'employer_profile'):
             return user.employer_profile
         return None
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsVerifiedEmployer(), IsJobOwner()]
+        return super().get_permissions()
     def get_queryset(self):
         employer = self.get_employer()
         if not employer:
@@ -69,14 +73,16 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Job.objects.all().order_by('-created_at')
     serializer_class = JobSerializer    
     pagination_class = JobPaginator
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def list(self, request, *args, **kwargs):
-        if not hasattr(request.user, 'candidate_profile'):
-            return Response(
-                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # theo nghiệp vụ nếu muốn chỉnh cái này chỉ cho tài khoản ứng viên xem thì
+        # tắt comment và chỉnh quyền permission_classes = [permissions.IsAuthenticated]
+        # if not hasattr(request.user, 'candidate_profile'):
+        #     return Response(
+        #         {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
+        #         status=status.HTTP_403_FORBIDDEN
+        #     )
         
         search_query = request.query_params.get('search', '').strip()  
         category_id = request.query_params.get('category', '')        
@@ -96,7 +102,14 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(location__icontains=location)
 
         if salary:
-            queryset = queryset.filter(salary_min__lte=salary, salary_max__gte=salary)
+            try:
+                salary_val = int(salary)
+                queryset = queryset.filter(
+                    salary_min__lte=salary_val,
+                    salary_max__gte=salary_val
+                )
+            except ValueError:
+                pass
 
             
         ordering = request.query_params.get('ordering', '-created_at')
