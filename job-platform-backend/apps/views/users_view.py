@@ -22,26 +22,47 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         role = user_serializer.validated_data.get('role', '').upper()
 
         if role == 'EMPLOYER':
-            # Validate Company trước — nếu lỗi thì báo luôn, chưa tạo gì cả
-            company_serializer = CompanySerializer(data=request.data)
-            company_serializer.is_valid(raise_exception=True)
+            company_id = request.data.get('company_id')
 
-            with transaction.atomic():
-                user = user_serializer.save()
-                company = company_serializer.save()
-                Employer.objects.create(user=user, company=company)
+            if company_id:
+                # Chọn công ty có sẵn
+                try:
+                    company = Company.objects.get(id=company_id)
+                except Company.DoesNotExist:
+                    return Response({"company_id": "Công ty không tồn tại."}, status=status.HTTP_400_BAD_REQUEST)
+                with transaction.atomic():
+                    user = user_serializer.save()
+                    Employer.objects.create(user=user, company=company)
+            else:
+                # Tự nhập công ty mới — fix mapping tên field
+                company_data = {
+                    'name': request.data.get('company_name', ''),
+                    'address': request.data.get('company_address', ''),
+                }
+                if 'company_logo' in request.FILES:
+                    company_data['logo'] = request.FILES['company_logo']
 
-            return Response(
-                {"detail": "Đăng ký thành công. Vui lòng chờ quản trị viên xác minh tài khoản."},
-                status=status.HTTP_201_CREATED
-            )
+                if not company_data['name']:
+                    return Response({"company_name": "Vui lòng nhập tên công ty."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Candidate đăng ký bình thường
-        user_serializer.save()
+                company_serializer = CompanySerializer(data=company_data)
+                company_serializer.is_valid(raise_exception=True)
+                with transaction.atomic():
+                    user = user_serializer.save()
+                    company = company_serializer.save(is_preset=False)
+                    Employer.objects.create(user=user, company=company)
         return Response(
-            {"detail": "Đăng ký thành công!"},
+            {"detail": "Đăng ký thành công. Vui lòng chờ quản trị viên xác minh tài khoản."},
             status=status.HTTP_201_CREATED
         )
+
+        user_serializer.save()
+        return Response({"detail": "Đăng ký thành công!"}, status=status.HTTP_201_CREATED)
+
+    @action(methods=['get'], url_path='companies', detail=False, permission_classes=[permissions.AllowAny])
+    def list_preset_companies(self, request):
+        companies = Company.objects.filter(is_preset=True).order_by('name')
+        return Response(CompanySerializer(companies, many=True).data)
 
     @action(
         methods=['post'],

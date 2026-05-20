@@ -5,7 +5,8 @@ from django.db.models import Q
 from apps.models.jobs import Job
 from apps.serializers.jobs_serializer import JobSerializer
 from apps.models.candidates import Application
-from apps.serializers.employers_serializer import EmployerProfileSerializer, CompanySerializer
+from apps.permissions import IsJobOwner
+
 from apps.serializers.candidates_serializer import ApplicationSerializer
 from apps.permissions import IsVerifiedEmployer
 from apps.paginators import JobPaginator
@@ -46,7 +47,7 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(methods=['post'], detail=True, url_path='review-application')
-    def review_application(self, request, pk=None):
+    def review_application(self, request):
         employer = self.get_employer()
         if not employer:
             return Response({"detail": "Chức năng này chỉ dành cho Nhà tuyển dụng."}, status=status.HTTP_403_FORBIDDEN)

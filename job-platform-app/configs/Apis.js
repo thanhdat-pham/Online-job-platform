@@ -22,6 +22,7 @@ export const endpoints = {
     'withdraw-application': (id) => `/applications/${id}/withdraw/`,
 
     // Employer
+    'preset_companies': '/users/companies/',
     'employer-jobs': '/employer/jobs/',
     'employer-job-detail': (id) => `/employer/jobs/${id}/`,
     'employer-job-applications': (id) => `/employer/jobs/${id}/applications/`,
