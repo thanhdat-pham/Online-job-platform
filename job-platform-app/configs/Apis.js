@@ -27,7 +27,7 @@ export const endpoints = {
     'toggle-saved-job': '/candidate/saved-jobs/toggle/',
 
     // Candidate profile
-    'candidate-profile': '/candidate/profile/',
+    'candidate-profile': '/candidates/profile/',
 
     // Employer
     'employer-jobs': '/employer/jobs/',
