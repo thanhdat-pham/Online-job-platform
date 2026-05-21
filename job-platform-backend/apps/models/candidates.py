@@ -17,11 +17,11 @@ class CandidateProfile(models.Model):
 
     )
     is_looking_for_job = models.BooleanField(default=True, verbose_name="Đang tìm việc")
-    cv_file = CloudinaryField(
-        "Tập tin CV (PDF/Word)", 
-    folder='candidate_cvs/', 
-    resource_type='raw', 
-    null=True, blank=True
+    cv_file = models.URLField(
+        verbose_name="Đường dẫn file CV",
+        max_length=500,
+        null=True,
+        blank=True
     )
     updated_date = models.DateTimeField(auto_now=True)
     class Meta:
