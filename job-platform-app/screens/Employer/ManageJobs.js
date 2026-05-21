@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlatList, View, Text, ActivityIndicator, Alert, TouchableOpacity } from "react-native";
+import { FlatList, View, Text, ActivityIndicator, Alert } from "react-native";
 import { Button } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
@@ -34,7 +34,10 @@ const ManageJobs = () => {
         ]);
     };
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => {
+        const unsubscribe = nav.addListener('focus', load);
+        return unsubscribe;
+    }, [nav]);
 
     if (loading) return <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }} />;
 
@@ -51,13 +54,19 @@ const ManageJobs = () => {
                     <Text style={{ color: COLORS.textLight, fontSize: 13, marginTop: 4 }}>
                         📍 {item.location} · 📅 {item.deadline ? new Date(item.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
                     </Text>
-                    <View style={[Styles.row, { marginTop: 10, justifyContent: 'flex-end' }]}>
+                    <View style={[Styles.row, { marginTop: 10, justifyContent: 'flex-end', flexWrap: 'wrap', gap: 6 }]}>
                         <Button
                             compact mode="outlined"
                             onPress={() => nav.navigate('view-applications', { jobId: item.id, jobTitle: item.title })}
-                            style={{ marginRight: 8 }}
                         >
                             Xem hồ sơ
+                        </Button>
+                        <Button
+                            compact mode="contained"
+                            buttonColor={COLORS.secondary}
+                            onPress={() => nav.navigate('post-job', { editJob: item })}
+                        >
+                            Sửa tin
                         </Button>
                         <Button compact mode="outlined" textColor={COLORS.danger} onPress={() => deleteJob(item.id)}>
                             Xóa

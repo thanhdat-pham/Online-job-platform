@@ -58,10 +58,27 @@ class RegisterSerializer(UserBaseSerializer):
         return user
     
 class UserSerializer(UserBaseSerializer):
-    
+    # Dùng SerializerMethodField để xử lý logic lấy full_name động
+    full_name = serializers.SerializerMethodField()
+    company_name = serializers.CharField(source='employer_profile.company.name', read_only=True)
+    position = serializers.CharField(source='employer_profile.position', read_only=True)
+
     class Meta:
         model = User
-       
-        fields = ["id", "username", "email", "role", "phone_number", "avatar", "is_active", "date_joined"]
+        # Đảm bảo các field này khớp với model hoặc source đã khai báo
+        fields = [
+            "id", "username", "email", "role", "phone_number",
+            "avatar", "is_active", "date_joined", "full_name",
+            "company_name", "position"
+        ]
         read_only_fields = ["id", "username", "date_joined"]
 
+    def get_full_name(self, obj):
+        if obj.role == 'CANDIDATE':
+            # Dùng getattr để an toàn, tránh lỗi nếu chưa có profile
+            profile = getattr(obj, 'candidate_profile', None)
+            return profile.full_name if profile else None
+        elif obj.role == 'EMPLOYER':
+            profile = getattr(obj, 'employer_profile', None)
+            return profile.full_name if profile else None
+        return None

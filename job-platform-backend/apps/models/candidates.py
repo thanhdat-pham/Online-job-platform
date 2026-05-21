@@ -11,22 +11,10 @@ class CandidateProfile(models.Model):
         primary_key=True
 
     )
-    location = models.CharField(max_length=100, blank=True, null=True, verbose_name="Địa điểm")
+
     full_name = models.CharField(
         max_length=255,
 
-    )
-    title = models.CharField(
-        max_length=255,
-        blank=True,
-        null = True,
-        verbose_name="Vị trí mong muốn"
-    )
-    summary = models.TextField(
-        max_length=500, 
-        null=True, 
-        blank=True, 
-        verbose_name="Giới thiệu bản thân ngắn gọn"
     )
     is_looking_for_job = models.BooleanField(default=True, verbose_name="Đang tìm việc")
     cv_file = CloudinaryField(

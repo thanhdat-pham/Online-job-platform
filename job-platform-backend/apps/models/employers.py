@@ -61,7 +61,7 @@ class Employer(models.Model):
         blank=True, 
         verbose_name="Chức vụ"
     )
-    
+    full_name = models.CharField(max_length=255, null=True, blank=True, verbose_name="Người đại diện")
     updated_date = models.DateTimeField(auto_now=True)
 
     class Meta:

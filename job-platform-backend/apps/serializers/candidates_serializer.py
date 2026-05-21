@@ -5,8 +5,8 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         class Meta:
             model = CandidateProfile
             fields = [
-                "user", "full_name", "title", "location", 
-                "summary", "is_looking_for_job", "cv_file", "updated_date"
+                "user", "full_name",
+                 "is_looking_for_job", "cv_file", "updated_date"
             ]
             read_only_fields = ["user", "updated_date"]
 
