@@ -1,13 +1,13 @@
 import { useState, useEffect, useContext } from "react";
 import { ScrollView, View, Alert, TouchableOpacity, Text, Image } from "react-native";
-import { TextInput, Button, HelperText, Switch } from "react-native-paper";
+import { Button, HelperText, Switch } from "react-native-paper";
 import * as DocPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/Contexts";
 import Styles, { COLORS } from "../../styles/Styles";
-
-const CandidateProfile = () => {
+import { WebView } from 'react-native-webview';
+const CandidateProfile = ({ navigation }) => {
     const [user] = useContext(MyUserContext);
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -27,40 +27,54 @@ const CandidateProfile = () => {
     const set = (key, val) => setProfile(prev => ({ ...prev, [key]: val }));
 
     const pickCV = async () => {
-        const result = await DocPicker.getDocumentAsync({
-            type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-        });
-        if (!result.canceled && result.assets?.length > 0) {
-            setCvFile(result.assets[0]);
+        try {
+            const result = await DocPicker.getDocumentAsync({
+                type: [
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                ],
+                copyToCacheDirectory: true,
+            });
+            if (!result.canceled && result.assets?.length > 0) {
+                setCvFile(result.assets[0]);
+            }
+        } catch (ex) {
+            console.error('Lỗi chọn file:', ex);
+            Alert.alert('Lỗi', 'Không thể chọn file. Vui lòng thử lại!');
         }
     };
 
     const save = async () => {
-        if (!profile?.full_name?.trim()) { setErr('Vui lòng nhập họ tên!'); return; }
         setErr('');
         setSaving(true);
         try {
             const token = await AsyncStorage.getItem('token');
             const form = new FormData();
-            form.append('full_name', profile.full_name || '');
-            form.append('title', profile.title || '');
-            form.append('location', profile.location || '');
-            form.append('summary', profile.summary || '');
+            // ĐÃ XÓA dòng append full_name ở đây
             form.append('is_looking_for_job', profile.is_looking_for_job ? 'true' : 'false');
+
             if (cvFile) {
+                const uri = cvFile.uri;
+                const name = cvFile.name || 'cv.pdf';
+                const type = cvFile.mimeType || 'application/pdf';
+
                 form.append('cv_file', {
-                    uri: cvFile.uri,
-                    name: cvFile.name || 'cv.pdf',
-                    type: cvFile.mimeType || 'application/pdf',
+                    uri: uri,
+                    name: name,
+                    type: type,
                 });
             }
+
             await authApis(token).patch(endpoints['candidate-profile'], form, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' },
+                transformRequest: (data) => data,
             });
             Alert.alert("Thành công", "Đã cập nhật hồ sơ!");
-            load();
+            setCvFile(null);
+            navigation.goBack(); // Tự động quay về trang Profile sau khi lưu thành công
         } catch (ex) {
-            console.error(ex.response?.data || ex);
+            console.error('Lỗi lưu hồ sơ:', ex.response?.data || ex.message || ex);
             setErr("Có lỗi xảy ra. Vui lòng thử lại!");
         } finally { setSaving(false); }
     };
@@ -81,8 +95,7 @@ const CandidateProfile = () => {
 
             {err ? <HelperText type="error" visible>{err}</HelperText> : null}
 
-            <TextInput style={Styles.input} label="Họ và tên *" value={profile?.full_name || ''} onChangeText={t => set('full_name', t)} />
-
+            {/* ĐÃ XÓA ô nhập TextInput Họ và tên ở đây */}
 
             <View style={[Styles.row, { marginVertical: 12, justifyContent: 'space-between' }]}>
                 <Text style={{ color: COLORS.text, fontWeight: '600' }}>Đang tìm việc</Text>

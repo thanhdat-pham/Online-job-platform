@@ -16,6 +16,7 @@ import MyApplications from "./screens/Jobs/MyApplications";
 import Login from "./screens/User/Login";
 import Register from "./screens/User/Register";
 import Profile from "./screens/User/Profile";
+import CandidateProfile from "./screens/User/CandidateProfile"; // <--- ĐẢM BẢO ĐÃ CÓ DÒNG NÀY
 import EmployerDashboard from "./screens/Employer/EmployerDashboard";
 import PostJob from "./screens/Employer/PostJob";
 import ManageJobs from "./screens/Employer/ManageJobs";
@@ -104,6 +105,9 @@ const TabNavigator = () => {
   );
 };
 
+// ĐÂY LÀ ĐOẠN QUAN TRỌNG NHẤT ĐỂ SỬA LỖI NAVIGATE
+const RootStack = createNativeStackNavigator();
+
 const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, null);
 
@@ -111,7 +115,25 @@ const App = () => {
     <MyUserContext.Provider value={[user, dispatch]}>
       <PaperProvider>
         <NavigationContainer>
-          <TabNavigator />
+          <RootStack.Navigator>
+            {/* Thẻ này bọc toàn bộ các Tab cũ của bạn */}
+            <RootStack.Screen
+              name="main-tabs"
+              component={TabNavigator}
+              options={{ headerShown: false }}
+            />
+            {/* Đưa CandidateProfile lên làm Stack ngoài cùng để gọi từ đâu cũng được */}
+            <RootStack.Screen
+              name="CandidateProfile"
+              component={CandidateProfile}
+              options={{
+                title: 'Hồ sơ ứng viên',
+                headerStyle: { backgroundColor: COLORS.primary },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: '700' }
+              }}
+            />
+          </RootStack.Navigator>
         </NavigationContainer>
       </PaperProvider>
     </MyUserContext.Provider>

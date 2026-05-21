@@ -4,9 +4,6 @@ import { useContext } from "react";
 import { MyUserContext } from "../../configs/Contexts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Styles, { COLORS } from "../../styles/Styles";
-import * as DocumentPicker from 'expo-document-picker'; // Nhớ cài: npx expo install expo-document-picker
-import axios from "axios";
-
 
 const Profile = ({ navigation }) => {
     const [user, dispatch] = useContext(MyUserContext);
@@ -14,49 +11,6 @@ const Profile = ({ navigation }) => {
     const logout = async () => {
         await AsyncStorage.removeItem('token');
         dispatch({ type: "LOGOUT" });
-    };
-
-
-    // ... bên trong component Profile
-    const handleUploadCV = async () => {
-        let result = await DocumentPicker.getDocumentAsync({ type: "application/pdf" });
-
-        if (!result.canceled) {
-            const file = result.assets[0];
-            const formData = new FormData();
-
-            // Key 'cv_file' phải khớp với tên trường trong Serializer/Model của Django
-            formData.append('cv_file', {
-                uri: file.uri,
-                name: file.name,
-                type: 'application/pdf',
-            });
-
-            const token = await AsyncStorage.getItem('token');
-
-            try {
-                // Thay URL này bằng endpoint cập nhật profile của bạn
-                await axios.patch('http://127.0.0.1:8000/candidates/profile/', formData, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-
-                    }
-                });
-
-                Alert.alert("Thành công", "CV đã được tải lên!");
-
-                // QUAN TRỌNG: Gọi lại API lấy thông tin user để cập nhật Context
-                // Nếu bạn không làm bước này, giao diện sẽ vẫn hiển thị "Chưa có CV"
-                const res = await axios.get('http://127.0.0.1:8000/users/current-user/', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                dispatch({ type: "LOGIN", payload: res.data }); // Cập nhật lại Context
-
-            } catch (error) {
-                console.error(error);
-                Alert.alert("Lỗi", "Không thể tải lên CV. Kiểm tra lại kết nối.");
-            }
-        }
     };
 
     const roleLabel = user?.role === 'EMPLOYER' ? 'Nhà tuyển dụng' : 'Ứng viên';
@@ -73,7 +27,7 @@ const Profile = ({ navigation }) => {
             { label: 'Họ và tên', value: user?.full_name },
             { label: 'Số điện thoại', value: user?.phone_number || 'Chưa cập nhật' },
             { label: 'Email', value: user?.email },
-            { label: 'CV của bạn', value: user?.candidate_profile?.cv_file ? 'Đã tải lên' : 'Chưa có CV' },
+
         ];
     };
 
@@ -94,11 +48,36 @@ const Profile = ({ navigation }) => {
                     </View>
                 ))}
             </View>
-
+            {user?.role === 'CANDIDATE' && user?.candidate_profile?.cv_file ? (
+                <View style={{ width: '100%', marginTop: 15, marginBottom: 5 }}>
+                    <Text style={{ fontSize: 13, color: COLORS.textLight, marginBottom: 6, fontWeight: '600' }}>
+                        📄 Nội dung CV hiện tại:
+                    </Text>
+                    <View style={{ width: '100%', height: 380, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E0E0' }}>
+                        <WebView
+                            originWhitelist={['*']}
+                            source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(user.candidate_profile.cv_file)}` }}
+                            style={{ flex: 1 }}
+                            startInLoadingState={true}
+                            scalesPageToFit={true}
+                        />
+                    </View>
+                </View>
+            ) : user?.role === 'CANDIDATE' ? (
+                <Text style={{ color: COLORS.textLight, fontSize: 13, marginVertical: 12, fontStyle: 'italic' }}>
+                    ⚠️ Bạn chưa cập nhật file CV lên hệ thống.
+                </Text>
+            ) : null}
             <View style={{ width: '100%', marginTop: 20 }}>
                 {user?.role === 'CANDIDATE' && (
-                    <Button icon="file-pdf-box" mode="contained" onPress={handleUploadCV} style={{ marginBottom: 10 }}>
-                        Tải lên CV (PDF)
+                    <Button
+                        icon={user?.candidate_profile?.cv_file ? "file-replace" : "upload"}
+                        mode={user?.candidate_profile?.cv_file ? "outlined" : "contained"} // Có rồi thì hiện viền (outlined), chưa có thì hiện nút đầy (contained)
+                        onPress={() => navigation.navigate('CandidateProfile')}
+                        style={{ marginBottom: 10, borderColor: COLORS.primary }}
+                        labelStyle={{ color: user?.candidate_profile?.cv_file ? COLORS.primary : '#fff' }}
+                    >
+                        {user?.candidate_profile?.cv_file ? "Đổi CV khác" : "Tải lên CV"}
                     </Button>
                 )}
 
