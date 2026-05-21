@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.contrib.auth import logout as django_logout
 from django.db import transaction
-from apps.serializers.user_serializer import RegisterSerializer
+from apps.serializers.user_serializer import RegisterSerializer, UserSerializer
 from apps.serializers.employers_serializer import CompanySerializer
 from apps.models.employers import Company, Employer
 from apps.models.candidates import CandidateProfile
@@ -111,15 +111,25 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
             {"detail": "Đã đăng xuất tài khoản thành công khỏi hệ thống!"},
             status=status.HTTP_200_OK
         )
+
+
     @action(
     methods=['get'],
     url_path='current-user',
     detail=False,
-    permission_classes=[permissions.IsAuthenticated]
+    permission_classes=[permissions.IsAuthenticated],
+    serializer_class = UserSerializer
     )
     def me(self, request):
         from apps.serializers.user_serializer import UserSerializer
-        return Response(UserSerializer(request.user).data)
+        user = request.user
+        # Dùng select_related để tối ưu truy vấn (tránh N+1 query)
+        if user.role == 'CANDIDATE':
+            user = User.objects.select_related('candidate_profile').get(pk=user.pk)
+        elif user.role == 'EMPLOYER':
+            user = User.objects.select_related('employer_profile__company').get(pk=user.pk)
+
+        return Response(UserSerializer(user).data)
 
     @action(methods=['post'], url_path='login', detail=False, permission_classes=[permissions.AllowAny],parser_classes=[parsers.JSONParser, parsers.FormParser])
     def login(self, request):

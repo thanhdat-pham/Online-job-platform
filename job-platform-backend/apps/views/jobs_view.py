@@ -1,141 +1,122 @@
 from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
-from apps.models.jobs import Job
-from apps.serializers.jobs_serializer import JobSerializer
-from apps.models.candidates import Application
-from apps.permissions import IsJobOwner
+from cloudinary.uploader import upload as cloudinary_upload
 
+from apps.models.jobs import Job, JobCategory
+from apps.models.candidates import CandidateProfile, Application
+from apps.serializers.jobs_serializer import JobSerializer, JobCategorySerializer
 from apps.serializers.candidates_serializer import ApplicationSerializer
-from apps.permissions import IsVerifiedEmployer
 from apps.paginators import JobPaginator
 
-class EmployerJobViewSet(viewsets.ModelViewSet):
-    serializer_class = JobSerializer
-    permission_classes = [IsVerifiedEmployer]
-    def get_employer(self):
-        user = self.request.user
-        if hasattr(user, 'employer_profile'):
-            return user.employer_profile
-        return None
-    def get_permissions(self):
-        if self.action in ("update", "partial_update", "destroy"):
-            return [IsVerifiedEmployer(), IsJobOwner()]
-        return super().get_permissions()
-    def get_queryset(self):
-        employer = self.get_employer()
-        if not employer:
-            return Job.objects.none()
-        return Job.objects.filter(employer=employer).order_by('-created_at')
-    def perform_create(self, serializer):
-        employer = self.get_employer()
-        serializer.save(employer=employer)
 
-    @action(methods=['get'], detail=True, url_path='applications')
-    def get_job_applications(self, request, pk=None):
-        employer = self.get_employer()
-        if not employer:
-            return Response({"detail": "Chức năng này chỉ dành cho Nhà tuyển dụng."}, status=status.HTTP_403_FORBIDDEN)
-        
-        try:
-            job = Job.objects.get(pk=pk, employer=employer)
-        except Job.DoesNotExist:
-            return Response({"detail": "Không tìm thấy bài tuyển dụng hợp lệ của bạn."}, status=status.HTTP_404_NOT_FOUND)
-        applications = Application.objects.filter(job=job).select_related('candidate').order_by('-applied_at')
-        serializer = ApplicationSerializer(applications, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    @action(methods=['post'], detail=True, url_path='review-application')
-    def review_application(self, request):
-        employer = self.get_employer()
-        if not employer:
-            return Response({"detail": "Chức năng này chỉ dành cho Nhà tuyển dụng."}, status=status.HTTP_403_FORBIDDEN)
-        new_status = request.data.get('status')
-        if new_status not in ['reviewed', 'interviewing', 'accepted', 'rejected']:
-            return Response({"detail": "Trạng thái không hợp lệ."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        application_id = request.data.get('application_id')
-        if not application_id:
-            return Response({"detail": "Thiếu application_id."}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            application = Application.objects.get(pk=application_id, job__employer=employer)
-        except Application.DoesNotExist:
-            return Response({"detail": "Không tìm thấy đơn ứng tuyển hợp lệ thuộc quyền quản lý."}, status=status.HTTP_404_NOT_FOUND)
-        application.status = new_status
-        application.save()
-        return Response({
-            "detail": f"Đã cập nhật trạng thái đơn ứng tuyển thành: {new_status}!",
-            "application_id": application.id,
-            "status": application.status
-        }, status=status.HTTP_200_OK)
-    
 class JobViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Job.objects.all().order_by('-created_at')
-    serializer_class = JobSerializer    
+    """
+    Public: list jobs, retrieve job detail, apply to job, list my applications, withdraw application.
+    """
+    serializer_class = JobSerializer
     pagination_class = JobPaginator
-    permission_classes = [permissions.AllowAny]
 
-    def list(self, request, *args, **kwargs):
-        # theo nghiệp vụ nếu muốn chỉnh cái này chỉ cho tài khoản ứng viên xem thì
-        # tắt comment và chỉnh quyền permission_classes = [permissions.IsAuthenticated]
-        # if not hasattr(request.user, 'candidate_profile'):
-        #     return Response(
-        #         {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."},
-        #         status=status.HTTP_403_FORBIDDEN
-        #     )
-        
-        search_query = request.query_params.get('search', '').strip()  
-        category_id = request.query_params.get('category', '')        
-        location = request.query_params.get('location', '').strip()    
-        salary = request.query_params.get('salary', None)              
+    def get_queryset(self):
+        qs = Job.objects.select_related('employer__company', 'category').order_by('-created_at')
+        q = self.request.query_params.get('q')
+        job_type = self.request.query_params.get('job_type')
+        category = self.request.query_params.get('category')
+        location = self.request.query_params.get('location')
+        experience = self.request.query_params.get('experience')
 
-        queryset = self.get_queryset()
-        if search_query:
-            queryset = queryset.filter(
-                Q(title__icontains=search_query) | Q(employer__company__name__icontains=search_query)
-            )
-
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
-
+        if q:
+            qs = qs.filter(Q(title__icontains=q) | Q(description__icontains=q) | Q(location__icontains=q))
+        if job_type:
+            qs = qs.filter(job_type=job_type)
+        if category:
+            qs = qs.filter(category_id=category)
         if location:
-            queryset = queryset.filter(location__icontains=location)
+            qs = qs.filter(location__icontains=location)
+        if experience:
+            qs = qs.filter(experience_level=experience)
+        return qs
 
-        if salary:
-            try:
-                salary_val = int(salary)
-                queryset = queryset.filter(
-                    salary_min__lte=salary_val,
-                    salary_max__gte=salary_val
-                )
-            except ValueError:
-                pass
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.views_count += 1
+        instance.save(update_fields=['views_count'])
+        return Response(JobSerializer(instance).data)
 
-            
-        ordering = request.query_params.get('ordering', '-created_at')
-        ALLOWED_ORDERING = ['salary_min', '-salary_min', 'created_at', '-created_at']
-        if ordering in ALLOWED_ORDERING:
-            queryset = queryset.order_by(ordering)
+    @action(detail=True, methods=['post'], url_path='apply',
+            permission_classes=[permissions.IsAuthenticated],
+            parser_classes=[MultiPartParser, FormParser])
+    def apply(self, request, pk=None):
+        job = self.get_object()
+        user = request.user
+        if user.role != 'CANDIDATE':
+            return Response({'detail': 'Chỉ ứng viên mới có thể nộp hồ sơ.'}, status=status.HTTP_403_FORBIDDEN)
 
-        page = self.paginate_queryset(queryset)
+        try:
+            profile = user.candidate_profile
+        except Exception:
+            return Response({'detail': 'Bạn chưa có hồ sơ ứng viên.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if Application.objects.filter(candidate=profile, job=job).exists():
+            return Response({'detail': 'Bạn đã ứng tuyển vị trí này rồi.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Handle CV file upload
+        cv_file = request.FILES.get('cv')
+        if cv_file:
+            upload_result = cloudinary_upload(cv_file, resource_type='raw', folder='application_cvs/')
+            # Update candidate profile cv
+            profile.cv_file = upload_result['public_id']
+            profile.save()
+
+        application = Application.objects.create(
+            candidate=profile,
+            job=job,
+            cover_letter=request.data.get('cover_letter', ''),
+        )
+        return Response(ApplicationSerializer(application).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='me',
+            permission_classes=[permissions.IsAuthenticated])
+    def my_applications(self, request):
+        user = request.user
+        try:
+            profile = user.candidate_profile
+        except Exception:
+            return Response([])
+        applications = Application.objects.filter(candidate=profile).select_related('job__employer__company').order_by('-applied_at')
+        page = self.paginate_queryset(applications)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            return self.get_paginated_response(ApplicationSerializer(page, many=True).data)
+        return Response(ApplicationSerializer(applications, many=True).data)
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-    
-    @action(methods=['get'], detail=False, url_path='compare')
-    def compare_jobs(self, request):
-        if not hasattr(request.user, 'candidate_profile'):
-            return Response(
-                {"detail": "Chức năng này chỉ dành cho tài khoản Ứng viên."}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        job_ids = [int(x) for x in request.query_params.get('ids', '').split(',') if x.strip().isdigit()]
-        queryset = Job.objects.filter(id__in=job_ids)
-        if not queryset.exists() or len(set(queryset.values_list('category_id', flat=True))) > 1:
-            return Response({"detail": "Danh sách ID không hợp lệ hoặc các công việc không cùng lĩnh vực."}, status=400)
-            
-        return Response(self.get_serializer(queryset, many=True).data)
+    @action(detail=True, methods=['delete'], url_path='withdraw',
+            permission_classes=[permissions.IsAuthenticated])
+    def withdraw(self, request, pk=None):
+        try:
+            profile = request.user.candidate_profile
+            app = Application.objects.get(id=pk, candidate=profile)
+            if app.status != 'pending':
+                return Response({'detail': 'Không thể rút hồ sơ sau khi đã được xem xét.'}, status=status.HTTP_400_BAD_REQUEST)
+            app.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Application.DoesNotExist:
+            return Response({'detail': 'Không tìm thấy hồ sơ.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ApplicationViewSet(viewsets.ViewSet):
+    """Handles withdraw by application ID"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=True, methods=['delete'], url_path='withdraw')
+    def withdraw(self, request, pk=None):
+        try:
+            profile = request.user.candidate_profile
+            app = Application.objects.get(id=pk, candidate=profile)
+            if app.status != 'pending':
+                return Response({'detail': 'Không thể rút hồ sơ sau khi đã được xem xét.'}, status=status.HTTP_400_BAD_REQUEST)
+            app.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Application.DoesNotExist:
+            return Response({'detail': 'Không tìm thấy hồ sơ.'}, status=status.HTTP_404_NOT_FOUND)

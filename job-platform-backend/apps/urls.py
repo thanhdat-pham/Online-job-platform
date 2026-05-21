@@ -8,8 +8,9 @@ router.register('candidates', views.CandidateViewSet, basename='candidate')
 router.register('jobs', views.JobViewSet, basename='job')
 router.register('employer', views.EmployerProfileViewSet, basename='employer')
 router.register(
-    'employer-jobs', views.EmployerJobViewSet, basename='employer-job'
+    'employer-jobs', views.EmployerProfileViewSet, basename='employer-job'
 )
+router.register('notifications', views.NotificationViewSet, basename='notification')
 urlpatterns = [
     
     path('', include(router.urls)),
