@@ -69,7 +69,7 @@ class UserSerializer(UserBaseSerializer):
         fields = [
             "id", "username", "email", "role", "phone_number",
             "avatar", "is_active", "date_joined", "full_name",
-            "company_name", "position"
+            "company_name", "position", "candidate_profile"
         ]
         read_only_fields = ["id", "username", "date_joined"]
 
@@ -81,4 +81,14 @@ class UserSerializer(UserBaseSerializer):
         elif obj.role == 'EMPLOYER':
             profile = getattr(obj, 'employer_profile', None)
             return profile.full_name if profile else None
+        return None
+
+    def get_candidate_profile(self, obj):
+        if obj.role == 'CANDIDATE':
+            profile = getattr(obj, 'candidate_profile', None)
+            if profile:
+                return {
+                    'cv_file': profile.cv_file.url if profile.cv_file else None,
+                    'is_looking_for_job': profile.is_looking_for_job,
+                }
         return None
