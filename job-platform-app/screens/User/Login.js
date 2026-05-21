@@ -12,9 +12,6 @@ const LOGIN_FIELDS = [
     { field: 'password', label: 'Mật khẩu', icon: 'eye', secureTextEntry: true },
 ];
 
-// ⚠️ Thay bằng client_id và client_secret từ Django OAuth2 Admin
-const CLIENT_ID = 'YOUR_CLIENT_ID';
-const CLIENT_SECRET = 'YOUR_CLIENT_SECRET';
 
 const Login = () => {
     const [form, setForm] = useState({});
@@ -35,10 +32,8 @@ const Login = () => {
         try {
             setLoading(true);
             let res = await Apis.post(endpoints['login'], {
-                ...form,
-                client_id: CLIENT_ID,
-                client_secret: CLIENT_SECRET,
-                grant_type: 'password',
+                username: form.username,
+                password: form.password,
             });
             await AsyncStorage.setItem('token', res.data.access_token);
 

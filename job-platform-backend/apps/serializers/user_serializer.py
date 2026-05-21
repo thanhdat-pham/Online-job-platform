@@ -14,7 +14,7 @@ class UserBaseSerializer(serializers.ModelSerializer):
         model = User
         fields = []
 class RegisterSerializer(UserBaseSerializer):
-  
+    full_name = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(
         write_only=True, 
         required=True,
@@ -25,7 +25,7 @@ class RegisterSerializer(UserBaseSerializer):
     class Meta:
         model = User
         
-        fields = ["username", "email", "password", "role", "phone_number", "avatar"]
+        fields = ["username", "email", "password", "role", "phone_number", "avatar", "full_name"]
     
     def validate_role(self, value):
        
@@ -50,6 +50,7 @@ class RegisterSerializer(UserBaseSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password')
+        full_name = validated_data.pop('full_name', '')
         user = User(**validated_data)
         user.set_password(password)
         user.save()

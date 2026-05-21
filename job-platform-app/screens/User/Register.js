@@ -7,9 +7,8 @@ import { useNavigation } from "@react-navigation/native";
 import Styles, { COLORS } from "../../styles/Styles";
 
 const CANDIDATE_FIELDS = [
-    { field: 'first_name', label: 'Tên', icon: 'text' },
-    { field: 'last_name', label: 'Họ và tên lót', icon: 'text' },
-    { field: 'email', label: 'Email', icon: 'email' },
+    { field: 'full_name', label: 'Họ và tên', icon: 'text' },
+    { field: 'email', label: 'Email ', icon: 'email' },
     { field: 'username', label: 'Tên đăng nhập', icon: 'account' },
     { field: 'password', label: 'Mật khẩu', icon: 'eye', secureTextEntry: true },
     { field: 'confirm', label: 'Xác nhận mật khẩu', icon: 'eye', secureTextEntry: true },
@@ -45,6 +44,19 @@ const Register = () => {
 
     const register = async () => {
         setErr("");
+        if (!form.full_name || !form.email || !form.username || !form.password || !form.phone_number) {
+            setErr("Vui lòng điền đầy đủ thông tin.");
+            return;
+        }
+        if (form.password !== form.confirm) {
+            setErr("Mật khẩu xác nhận không khớp.");
+            return;
+        }
+        if (!avatar) {
+            setErr("Vui lòng chọn ảnh đại diện.");
+            return;
+        }
+
         setLoading(true);
         try {
             const fd = new FormData();
@@ -65,6 +77,7 @@ const Register = () => {
             await Apis.post(endpoints['register'], fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             Alert.alert("Thành công", "Đăng ký thành công!", [{ text: 'Đăng nhập', onPress: () => nav.navigate('login') }]);
         } catch (ex) {
+            console.log("LỖI 400 CHI TIẾT:", JSON.stringify(ex?.response?.data));
             const errData = ex?.response?.data;
             if (errData && typeof errData === 'object') {
                 const messages = Object.entries(errData)

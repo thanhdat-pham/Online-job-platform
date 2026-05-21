@@ -2,11 +2,11 @@ import axios from "axios";
 
 // ⚠️ Thay IP_ADDRESS bằng địa chỉ IP máy chạy backend của bạn
 // Ví dụ: http://192.168.1.10:8000/
-const BASE_URL = "http://10.0.2.2:8000/r"
+const BASE_URL = "http://10.0.2.2:8000/"
 
 export const endpoints = {
     // Auth
-    'login': '/o/token/',
+    'login': '/users/login/',
     'register': '/users/',
     'current-user': '/users/current-user/',
     'change-password': '/users/change-password/',

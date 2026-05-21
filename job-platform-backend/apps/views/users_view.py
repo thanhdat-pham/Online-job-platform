@@ -7,7 +7,9 @@ from django.db import transaction
 from apps.serializers.user_serializer import RegisterSerializer
 from apps.serializers.employers_serializer import CompanySerializer
 from apps.models.employers import Company, Employer
+from apps.models.candidates import CandidateProfile
 
+from backend import settings
 User = get_user_model()
 
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
@@ -60,8 +62,13 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
 
         else:
 
-            user_serializer.save()
-            return Response({"detail": "Đăng ký thành công!"}, status=status.HTTP_201_CREATED)
+            full_name = user_serializer.validated_data.get('full_name', '')
+            user = user_serializer.save()
+            CandidateProfile.objects.create(user=user, full_name=full_name)
+            return Response(
+                {"detail": "Đăng ký thành công!"},
+                status=status.HTTP_201_CREATED
+            )
 
 
     @action(methods=['get'], url_path='companies', detail=False, permission_classes=[permissions.AllowAny])
@@ -106,10 +113,27 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         )
     @action(
     methods=['get'],
-    url_path='me',
+    url_path='current-user',
     detail=False,
     permission_classes=[permissions.IsAuthenticated]
     )
     def me(self, request):
         from apps.serializers.user_serializer import UserSerializer
         return Response(UserSerializer(request.user).data)
+
+    @action(methods=['post'], url_path='login', detail=False, permission_classes=[permissions.AllowAny],parser_classes=[parsers.JSONParser, parsers.FormParser])
+    def login(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        if not username or not password:
+            return Response({"detail": "Vui lòng nhập tài khoản và mật khẩu."}, status=status.HTTP_400_BAD_REQUEST)
+
+        import requests as http_requests
+        res = http_requests.post('http://localhost:8000/o/token/', data={
+            'grant_type': 'password',
+            'username': username,
+            'password': password,
+            'client_id': settings.CLIENT_ID,
+            'client_secret': settings.CLIENT_SECRET,
+        })
+        return Response(res.json(), status=res.status_code)
