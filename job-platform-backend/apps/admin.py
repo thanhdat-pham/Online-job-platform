@@ -3,6 +3,8 @@ from apps.models.candidates import CandidateProfile, Application
 from apps.models.employers import Company, Employer
 from apps.models.jobs import Job, JobCategory
 from apps.models.user import User
+from django.utils.html import format_html
+import cloudinary
 
 
 admin.site.register(CandidateProfile)
@@ -38,3 +40,19 @@ class UserAdmin(admin.ModelAdmin):
             "fields": ("role", "is_verified", "is_active", "is_staff", "is_superuser")
         }),
     )
+
+    class CandidateProfileAdmin(admin.ModelAdmin):
+        readonly_fields = ['cv_link']
+
+        def cv_link(self, obj):
+            if obj.cv_file:
+                raw_url = cloudinary.CloudinaryImage(str(obj.cv_file)).build_url(resource_type='raw')
+
+                # 2. Nhúng qua Google Docs Viewer để xem trực tiếp
+                viewer_url = f"https://docs.google.com/viewer?url={raw_url}&embedded=true"
+
+                return format_html(
+                    '<a href="{}" target="_blank" style="padding: 5px; background: #eee; border: 1px solid #ccc;">Xem CV (Google Viewer)</a>',
+                    viewer_url
+                )
+            return "Chưa có CV"

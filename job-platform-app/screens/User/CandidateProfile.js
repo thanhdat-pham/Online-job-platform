@@ -51,7 +51,6 @@ const CandidateProfile = ({ navigation }) => {
         try {
             const token = await AsyncStorage.getItem('token');
             const form = new FormData();
-            // ĐÃ XÓA dòng append full_name ở đây
             form.append('is_looking_for_job', profile.is_looking_for_job ? 'true' : 'false');
 
             if (cvFile) {
@@ -65,11 +64,12 @@ const CandidateProfile = ({ navigation }) => {
                     type: type,
                 });
             }
-
-            await authApis(token).patch(endpoints['candidate-profile'], form, {
+            const res = await authApis(token).patch(endpoints['candidate-profile'], form, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 transformRequest: (data) => data,
             });
+            setProfile(res.data);
+            setCvFile(null);
             Alert.alert("Thành công", "Đã cập nhật hồ sơ!");
             setCvFile(null);
             navigation.goBack(); // Tự động quay về trang Profile sau khi lưu thành công
