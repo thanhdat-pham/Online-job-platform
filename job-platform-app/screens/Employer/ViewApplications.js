@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { FlatList, View, Text, ActivityIndicator, Alert, Linking } from "react-native";
+import { FlatList, View, Text, ActivityIndicator, Alert, Linking, Modal, StyleSheet } from "react-native";
 import { Button, Menu, TextInput } from "react-native-paper";
+import { WebView } from "react-native-webview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
 import Styles, { COLORS } from "../../styles/Styles";
@@ -20,12 +21,49 @@ const statusInfo = {
     rejected: { label: 'Từ chối', color: '#C62828' },
 };
 
+// ── CV Viewer Modal ──────────────────────────────────────────────────────────
+const CVViewerModal = ({ url, visible, onClose }) => {
+    if (!url) return null;
+
+    // Google Docs Viewer nhúng PDF ngay trong app, không cần tải về
+    const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+
+    return (
+        <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+            <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>📄 Xem CV ứng viên</Text>
+                <Button onPress={onClose} textColor={COLORS.primary}>Đóng</Button>
+            </View>
+            <WebView
+                source={{ uri: googleViewerUrl }}
+                style={{ flex: 1 }}
+                startInLoadingState
+                renderLoading={() => (
+                    <View style={Styles.center}>
+                        <ActivityIndicator color={COLORS.primary} size="large" />
+                        <Text style={{ marginTop: 8, color: COLORS.textLight }}>Đang tải CV...</Text>
+                    </View>
+                )}
+            />
+        </Modal>
+    );
+};
+
+// ── App Card ─────────────────────────────────────────────────────────────────
 const AppCard = ({ item, jobId, onUpdate }) => {
     const [menuVisible, setMenuVisible] = useState(false);
     const [noteVisible, setNoteVisible] = useState(false);
+    const [cvVisible, setCvVisible] = useState(false);   // ← mới
     const [note, setNote] = useState(item.employers_note || '');
     const [savingNote, setSavingNote] = useState(false);
+
     const info = statusInfo[item.status] || { label: item.status, color: COLORS.primary };
+    const cvUrl = item.candidate?.cv_file;
+    const candidateName =
+        item.candidate?.full_name ||
+        `${item.candidate?.first_name || ''} ${item.candidate?.last_name || ''}`.trim() ||
+        item.candidate?.username ||
+        'Ứng viên';
 
     const updateStatus = async (newStatus) => {
         setMenuVisible(false);
@@ -36,7 +74,7 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 status: newStatus,
             });
             onUpdate(item.id, { status: newStatus });
-        } catch (ex) {
+        } catch {
             Alert.alert("Lỗi", "Không thể cập nhật trạng thái!");
         }
     };
@@ -59,11 +97,9 @@ const AppCard = ({ item, jobId, onUpdate }) => {
         }
     };
 
-    const candidateName = item.candidate?.full_name || `${item.candidate?.first_name || ''} ${item.candidate?.last_name || ''}`.trim() || item.candidate?.username || 'Ứng viên';
-    const cvUrl = item.candidate?.cv_file;
-
     return (
         <View style={Styles.card}>
+            {/* Header */}
             <View style={[Styles.row, { justifyContent: 'space-between' }]}>
                 <View style={{ flex: 1 }}>
                     <Text style={{ fontWeight: '700', fontSize: 14, color: COLORS.text }}>
@@ -76,12 +112,14 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 </View>
             </View>
 
+            {/* Cover letter */}
             {item.cover_letter && (
                 <Text style={{ color: COLORS.text, marginTop: 8, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>
                     📄 {item.cover_letter}
                 </Text>
             )}
 
+            {/* Employer note */}
             {item.employers_note ? (
                 <View style={{ marginTop: 6, padding: 8, backgroundColor: '#FFF9C4', borderRadius: 6 }}>
                     <Text style={{ fontSize: 12, color: '#5D4037' }}>📝 Ghi chú: {item.employers_note}</Text>
@@ -92,11 +130,17 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 Nộp lúc: {new Date(item.applied_at).toLocaleString('vi-VN')}
             </Text>
 
+            {/* Action buttons */}
             <View style={[Styles.row, { marginTop: 10, flexWrap: 'wrap', gap: 6 }]}>
-                {/* View CV */}
+
+                {/* ✅ FIX: Xem CV inline thay vì Linking.openURL */}
                 {cvUrl ? (
-                    <Button compact mode="outlined" icon="file-document"
-                        onPress={() => Linking.openURL(cvUrl)}>
+                    <Button
+                        compact
+                        mode="outlined"
+                        icon="file-document"
+                        onPress={() => setCvVisible(true)}   // mở modal WebView
+                    >
                         Xem CV
                     </Button>
                 ) : (
@@ -126,6 +170,7 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 </Menu>
             </View>
 
+            {/* Note input */}
             {noteVisible && (
                 <View style={{ marginTop: 10 }}>
                     <TextInput
@@ -142,10 +187,18 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                     </Button>
                 </View>
             )}
+
+            {/* CV Viewer Modal */}
+            <CVViewerModal
+                url={cvUrl}
+                visible={cvVisible}
+                onClose={() => setCvVisible(false)}
+            />
         </View>
     );
 };
 
+// ── Main Screen ───────────────────────────────────────────────────────────────
 const ViewApplications = ({ route }) => {
     const { jobId, jobTitle } = route.params || {};
     const [apps, setApps] = useState([]);
@@ -181,5 +234,21 @@ const ViewApplications = ({ route }) => {
         />
     );
 };
+
+const styles = StyleSheet.create({
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        backgroundColor: '#fff',
+    },
+    modalTitle: {
+        fontWeight: '700',
+        fontSize: 16,
+    },
+});
 
 export default ViewApplications;
