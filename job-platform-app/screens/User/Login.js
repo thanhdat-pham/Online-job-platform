@@ -17,6 +17,7 @@ const Login = () => {
     const [form, setForm] = useState({});
     const [err, setErr] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const nav = useNavigation();
     const [, dispatch] = useContext(MyUserContext);
 
@@ -60,8 +61,18 @@ const Login = () => {
                     label={f.label}
                     value={form[f.field] || ''}
                     onChangeText={t => setForm({ ...form, [f.field]: t })}
-                    secureTextEntry={f.secureTextEntry}
-                    right={<TextInput.Icon icon={f.icon} />}
+                    // Chỉ ẩn mật khẩu nếu trường đó là 'password' và showPassword đang false
+                    secureTextEntry={f.field === 'password' && !showPassword}
+                    right={
+                        f.field === 'password' ? (
+                            <TextInput.Icon
+                                icon={showPassword ? "eye-off" : "eye"}
+                                onPress={() => setShowPassword(!showPassword)}
+                            />
+                        ) : (
+                            <TextInput.Icon icon={f.icon} />
+                        )
+                    }
                 />
             ))}
 

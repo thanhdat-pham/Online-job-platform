@@ -9,7 +9,7 @@ class Company(models.Model):
         'logo',
         null=True,
         blank=True,
-        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])]
+
     )
     is_preset = models.BooleanField(default=False, verbose_name="Công ty có sẵn")
     created_date = models.DateTimeField(auto_now_add=True)
