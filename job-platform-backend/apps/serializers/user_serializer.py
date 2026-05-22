@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from apps.models.user import User
-
+from apps.serializers.candidates_serializer import CandidateProfileSerializer
+from apps.serializers.employers_serializer import EmployerProfileSerializer
 class UserBaseSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -10,6 +11,7 @@ class UserBaseSerializer(serializers.ModelSerializer):
             data['avatar'] = instance.avatar.url
         return data
     
+
     class Meta:
         model = User
         fields = []
@@ -62,14 +64,15 @@ class UserSerializer(UserBaseSerializer):
     full_name = serializers.SerializerMethodField()
     company_name = serializers.CharField(source='employer_profile.company.name', read_only=True)
     position = serializers.CharField(source='employer_profile.position', read_only=True)
-
+    candidate_profile = serializers.SerializerMethodField()
+    employer_profile = serializers.SerializerMethodField()
     class Meta:
         model = User
         # Đảm bảo các field này khớp với model hoặc source đã khai báo
         fields = [
-            "id", "username", "email", "role", "phone_number",
+             "id", "username", "email", "role", "phone_number",
             "avatar", "is_active", "date_joined", "full_name",
-            "company_name", "position", "candidate_profile"
+            "company_name", "position", "candidate_profile", "employer_profile"
         ]
         read_only_fields = ["id", "username", "date_joined"]
 
@@ -87,8 +90,12 @@ class UserSerializer(UserBaseSerializer):
         if obj.role == 'CANDIDATE':
             profile = getattr(obj, 'candidate_profile', None)
             if profile:
-                return {
-                    'cv_file': profile.cv_file.url if profile.cv_file else None,
-                    'is_looking_for_job': profile.is_looking_for_job,
-                }
+                return CandidateProfileSerializer(profile).data
+        return None
+
+    def get_employer_profile(self, obj):
+        if obj.role == 'EMPLOYER':
+            profile = getattr(obj, 'employer_profile', None)
+            if profile:
+                return EmployerProfileSerializer(profile).data  # dùng serializer tương ứng
         return None

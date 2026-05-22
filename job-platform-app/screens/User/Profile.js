@@ -8,6 +8,16 @@ import Styles, { COLORS } from "../../styles/Styles";
 const Profile = ({ navigation }) => {
     const [user, dispatch] = useContext(MyUserContext);
 
+    // Kiểm tra trạng thái hoàn thiện hồ sơ
+
+    const isProfileComplete = !!(
+        (profile?.education || "").trim().length > 0 &&
+        (profile?.skills || "").trim().length > 0 &&
+        (profile?.experience || "").trim().length > 0
+    );
+    const profile = user?.candidate_profile;
+
+
     const logout = async () => {
         await AsyncStorage.removeItem('token');
         dispatch({ type: "LOGOUT" });
@@ -17,17 +27,25 @@ const Profile = ({ navigation }) => {
 
     const getProfileInfo = () => {
         if (user?.role === 'EMPLOYER') {
+            // Ưu tiên lấy từ employer_profile nếu có, sau đó là lấy trực tiếp nếu dữ liệu phẳng
+            const employer = user?.employer_profile || user;
+            const company = employer?.company_details || {};
+
             return [
-                { label: 'Tên công ty', value: user?.company_name },
-                { label: 'Địa chỉ', value: user?.company_address },
+                { label: 'Tên công ty', value: company?.name },
+                {
+                    label: 'Địa chỉ',
+                    value: company?.address
+                },
                 { label: 'Email', value: user?.email },
             ];
         }
+
+        // Dành cho Candidate
         return [
             { label: 'Họ và tên', value: user?.full_name },
             { label: 'Số điện thoại', value: user?.phone_number || 'Chưa cập nhật' },
             { label: 'Email', value: user?.email },
-
         ];
     };
 
@@ -48,36 +66,26 @@ const Profile = ({ navigation }) => {
                     </View>
                 ))}
             </View>
-            {user?.role === 'CANDIDATE' && user?.candidate_profile?.cv_file ? (
-                <View style={{ width: '100%', marginTop: 15, marginBottom: 5 }}>
-                    <Text style={{ fontSize: 13, color: COLORS.textLight, marginBottom: 6, fontWeight: '600' }}>
-                        📄 Nội dung CV hiện tại:
-                    </Text>
-                    <View style={{ width: '100%', height: 380, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E0E0' }}>
-                        <WebView
-                            originWhitelist={['*']}
-                            source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(user.candidate_profile.cv_file)}` }}
-                            style={{ flex: 1 }}
-                            startInLoadingState={true}
-                            scalesPageToFit={true}
-                        />
-                    </View>
-                </View>
-            ) : user?.role === 'CANDIDATE' ? (
-                <Text style={{ color: COLORS.textLight, fontSize: 13, marginVertical: 12, fontStyle: 'italic' }}>
-                    ⚠️ Bạn chưa cập nhật file CV lên hệ thống.
+
+            {/* Thông báo tình trạng hồ sơ */}
+            {user?.role === 'CANDIDATE' && !isProfileComplete && (
+                <Text style={{ color: COLORS.primary, fontSize: 13, marginVertical: 12, fontStyle: 'italic' }}>
+                    ⚠️ Bạn chưa cập nhật đầy đủ hồ sơ.
+
                 </Text>
-            ) : null}
+            )}
+
             <View style={{ width: '100%', marginTop: 20 }}>
                 {user?.role === 'CANDIDATE' && (
                     <Button
-                        icon={user?.candidate_profile?.cv_file ? "file-replace" : "upload"}
-                        mode={user?.candidate_profile?.cv_file ? "outlined" : "contained"} // Có rồi thì hiện viền (outlined), chưa có thì hiện nút đầy (contained)
+                        mode="contained"
                         onPress={() => navigation.navigate('CandidateProfile')}
-                        style={{ marginBottom: 10, borderColor: COLORS.primary }}
-                        labelStyle={{ color: user?.candidate_profile?.cv_file ? COLORS.primary : '#fff' }}
+                        style={{
+                            marginBottom: 10,
+                            backgroundColor: COLORS.primary
+                        }}
                     >
-                        {user?.candidate_profile?.cv_file ? "Đổi CV khác" : "Tải lên CV"}
+                        {isProfileComplete ? "Sửa hồ sơ" : "Hoàn thiện hồ sơ"}
                     </Button>
                 )}
 
