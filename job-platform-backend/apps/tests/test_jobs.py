@@ -63,32 +63,32 @@ class JobListSearchTestCase(TestCase):
         self.client.force_authenticate(user=self.candidate)
 
     def test_list_jobs_success(self):
-        """Ứng viên xem danh sách việc làm thành công"""
+
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_list_jobs_employer_forbidden(self):
-        """Nhà tuyển dụng không được dùng API danh sách job của ứng viên"""
+
         self.client.force_authenticate(user=self.employer)
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_search_by_title(self):
-        """Tìm kiếm theo tên công việc"""
+
         res = self.client.get(self.url, {'search': 'Backend'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         results = res.data.get('results', res.data)
         self.assertEqual(len(results), 1)
 
     def test_search_by_location(self):
-        """Tìm kiếm theo địa điểm"""
+
         res = self.client.get(self.url, {'location': 'HN'})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         results = res.data.get('results', res.data)
         self.assertEqual(len(results), 1)
 
     def test_search_by_category(self):
-        """Tìm kiếm theo ngành nghề"""
+
         res = self.client.get(self.url, {'category': self.category.id})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         results = res.data.get('results', res.data)

@@ -21,6 +21,8 @@ import EmployerDashboard from "./screens/Employer/EmployerDashboard";
 import PostJob from "./screens/Employer/PostJob";
 import ManageJobs from "./screens/Employer/ManageJobs";
 import ViewApplications from "./screens/Employer/ViewApplications";
+import EmployerProfile from "./screens/Employer/EmployerProfile";
+import Notifications from "./screens/Notifications/Notifications";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -65,9 +67,18 @@ const TabNavigator = () => {
       <Tab.Screen
         name="jobs"
         component={HomeStack}
-        options={{ title: 'Việc làm', tabBarIcon: ({ color }) => <Icon source="briefcase-search" size={26} color={color} /> }}
+        options={{ title: 'Trang chủ', tabBarIcon: ({ color }) => <Icon source="briefcase-search" size={26} color={color} /> }}
       />
-
+      {user !== null && (
+        <Tab.Screen
+          name="notifications"
+          component={Notifications} // Đảm bảo đã import component này
+          options={{
+            title: 'Thông báo',
+            tabBarIcon: ({ color }) => <Icon source="bell" size={26} color={color} />
+          }}
+        />
+      )}
       {user === null ? (
         <Tab.Screen
           name="auth"
@@ -128,6 +139,16 @@ const App = () => {
               component={CandidateProfile}
               options={{
                 title: 'Hồ sơ ứng viên',
+                headerStyle: { backgroundColor: COLORS.primary },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: '700' }
+              }}
+            />
+            <RootStack.Screen
+              name="EmployerProfile"
+              component={EmployerProfile}
+              options={{
+                title: 'Hồ sơ nhà tuyển dụng',
                 headerStyle: { backgroundColor: COLORS.primary },
                 headerTintColor: '#fff',
                 headerTitleStyle: { fontWeight: '700' }

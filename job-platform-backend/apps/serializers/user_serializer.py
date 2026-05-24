@@ -7,7 +7,7 @@ class UserBaseSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.avatar:
-            # Đảm bảo trả về URL tuyệt đối từ Cloudinary
+
             data['avatar'] = instance.avatar.url
         return data
     
@@ -34,8 +34,7 @@ class RegisterSerializer(UserBaseSerializer):
         role_upper = value.upper()
         if role_upper == "ADMIN":
             raise serializers.ValidationError("Không được phép đăng ký tài khoản Quản trị viên.")
-        
-        # Kiểm tra xem role gửi lên có nằm trong danh sách cho phép không
+
         valid_roles = [choice[0] for choice in User.ROLE_CHOICES]
         if role_upper not in valid_roles:
             raise serializers.ValidationError("Vai trò không hợp lệ.")
@@ -60,7 +59,7 @@ class RegisterSerializer(UserBaseSerializer):
         return user
     
 class UserSerializer(UserBaseSerializer):
-    # Dùng SerializerMethodField để xử lý logic lấy full_name động
+
     full_name = serializers.SerializerMethodField()
     company_name = serializers.CharField(source='employer_profile.company.name', read_only=True)
     position = serializers.CharField(source='employer_profile.position', read_only=True)
@@ -68,7 +67,7 @@ class UserSerializer(UserBaseSerializer):
     employer_profile = serializers.SerializerMethodField()
     class Meta:
         model = User
-        # Đảm bảo các field này khớp với model hoặc source đã khai báo
+
         fields = [
              "id", "username", "email", "role", "phone_number",
             "avatar", "is_active", "date_joined", "full_name",
@@ -78,7 +77,7 @@ class UserSerializer(UserBaseSerializer):
 
     def get_full_name(self, obj):
         if obj.role == 'CANDIDATE':
-            # Dùng getattr để an toàn, tránh lỗi nếu chưa có profile
+
             profile = getattr(obj, 'candidate_profile', None)
             return profile.full_name if profile else None
         elif obj.role == 'EMPLOYER':
@@ -97,5 +96,5 @@ class UserSerializer(UserBaseSerializer):
         if obj.role == 'EMPLOYER':
             profile = getattr(obj, 'employer_profile', None)
             if profile:
-                return EmployerProfileSerializer(profile).data  # dùng serializer tương ứng
+                return EmployerProfileSerializer(profile).data  
         return None

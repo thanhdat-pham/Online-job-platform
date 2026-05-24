@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.models.employers import Employer
 from apps.models.jobs import Job
@@ -15,7 +15,7 @@ from apps.permissions import IsEmployer
 
 class EmployerProfileViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated, IsEmployer]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @action(detail=False, methods=['get', 'patch'], url_path='profile')
     def profile(self, request):
@@ -157,7 +157,7 @@ class EmployerJobViewSet(viewsets.ViewSet):
         total_applications = Application.objects.filter(job__in=jobs).count()
         total_views = sum(j.views_count for j in jobs)
 
-        # Monthly applications for last 6 months
+
         six_months_ago = datetime.date.today().replace(day=1)
         monthly = (
             Application.objects

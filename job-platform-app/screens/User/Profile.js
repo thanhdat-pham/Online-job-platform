@@ -76,18 +76,22 @@ const Profile = ({ navigation }) => {
             )}
 
             <View style={{ width: '100%', marginTop: 20 }}>
-                {user?.role === 'CANDIDATE' && (
-                    <Button
-                        mode="contained"
-                        onPress={() => navigation.navigate('CandidateProfile')}
-                        style={{
-                            marginBottom: 10,
-                            backgroundColor: COLORS.primary
-                        }}
-                    >
-                        {isProfileComplete ? "Sửa hồ sơ" : "Hoàn thiện hồ sơ"}
-                    </Button>
-                )}
+                <Button
+                    mode="contained"
+                    onPress={() => {
+                        if (user?.role === 'EMPLOYER') {
+                            navigation.navigate('EmployerProfile'); // Điều hướng tới màn hình mới của NTD
+                        } else {
+                            navigation.navigate('CandidateProfile'); // Giữ nguyên cho ứng viên
+                        }
+                    }}
+                    style={{
+                        marginBottom: 10,
+                        backgroundColor: COLORS.primary
+                    }}
+                >
+                    {user?.role === 'EMPLOYER' ? "Sửa hồ sơ NTD" : (isProfileComplete ? "Sửa hồ sơ" : "Hoàn thiện hồ sơ")}
+                </Button>
 
                 <Button icon="lock" mode="outlined" onPress={() => Alert.alert("Thông báo", "Chức năng đổi mật khẩu đang được phát triển!")} style={{ marginBottom: 10 }}>
                     Đổi mật khẩu

@@ -21,11 +21,11 @@ const statusInfo = {
     rejected: { label: 'Từ chối', color: '#C62828' },
 };
 
-// ── CV Viewer Modal ──────────────────────────────────────────────────────────
+
 const CVViewerModal = ({ url, visible, onClose }) => {
     if (!url) return null;
 
-    // Google Docs Viewer nhúng PDF ngay trong app, không cần tải về
+
     const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
 
     return (
@@ -49,11 +49,11 @@ const CVViewerModal = ({ url, visible, onClose }) => {
     );
 };
 
-// ── App Card ─────────────────────────────────────────────────────────────────
+
 const AppCard = ({ item, jobId, onUpdate }) => {
     const [menuVisible, setMenuVisible] = useState(false);
     const [noteVisible, setNoteVisible] = useState(false);
-    const [cvVisible, setCvVisible] = useState(false);   // ← mới
+    const [cvVisible, setCvVisible] = useState(false);
     const [note, setNote] = useState(item.employers_note || '');
     const [savingNote, setSavingNote] = useState(false);
 
@@ -139,7 +139,7 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                         compact
                         mode="outlined"
                         icon="file-document"
-                        onPress={() => setCvVisible(true)}   // mở modal WebView
+                        onPress={() => setCvVisible(true)}
                     >
                         Xem CV
                     </Button>
@@ -198,7 +198,7 @@ const AppCard = ({ item, jobId, onUpdate }) => {
     );
 };
 
-// ── Main Screen ───────────────────────────────────────────────────────────────
+
 const ViewApplications = ({ route }) => {
     const { jobId, jobTitle } = route.params || {};
     const [apps, setApps] = useState([]);

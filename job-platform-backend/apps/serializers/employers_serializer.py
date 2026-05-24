@@ -19,8 +19,8 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employer
         fields = [
-            "user", "company", "company_details", 
-            "company_size", "position", "updated_date"
+            "user", "company", "company_details","full_name",
+             "position", "bio","updated_date"
         ]
         read_only_fields = ["user", "updated_date"]
   

@@ -16,7 +16,7 @@ const JOB_TYPES = [
 const PostJob = () => {
     const nav = useNavigation();
     const route = useRoute();
-    // Support editing: if editJob is passed, pre-fill form
+
     const editJob = route.params?.editJob || null;
 
     const [form, setForm] = useState({

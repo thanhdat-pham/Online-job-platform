@@ -23,14 +23,7 @@ class Company(models.Model):
         
         return self.name
 class Employer(models.Model):
-    # Kết nối 1-1 với User định danh
-    COMPANY_SIZE_CHOICES = [
-        ("1-10", "1-10"),
-        ("11-50", "11-50"),
-        ("51-200", "51-200"),
-        ("201-500", "201-500"),
-        ("500+", "500+"),
-    ]
+
     user = models.OneToOneField(
         User, 
         on_delete=models.CASCADE, 
@@ -40,7 +33,7 @@ class Employer(models.Model):
     )
     company_size = models.CharField(
         max_length=50, 
-        choices=COMPANY_SIZE_CHOICES, 
+
         null=True, 
         blank=True
     )
@@ -63,7 +56,8 @@ class Employer(models.Model):
     )
     full_name = models.CharField(max_length=255, null=True, blank=True, verbose_name="Người đại diện")
     updated_date = models.DateTimeField(auto_now=True)
-
+    position = models.CharField(max_length=100, null=True, blank=True, verbose_name="Chức vụ")
+    bio = models.TextField(null=True, blank=True, verbose_name="Giới thiệu bản thân")
     class Meta:
         db_table = "employer_profiles"
         verbose_name = "Hồ sơ Nhà tuyển dụng"
