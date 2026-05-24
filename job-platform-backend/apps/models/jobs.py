@@ -32,25 +32,25 @@ class Job(models.Model):
         null= True,
         related_name="jobs",
     )
-    # THÔNG TIN TÌM KIẾM & SO SÁNH
-    title = models.CharField(max_length=255) # Tên công việc
-    description = models.TextField()         # Mô tả chi tiết
-    requirements = models.TextField()        # Yêu cầu (để so sánh kinh nghiệm)
-    benefits = models.TextField(blank=True)  # Phúc lợi (để so sánh đãi ngộ)
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    requirements = models.TextField()
+    benefits = models.TextField(blank=True)
     
-    # Lương: Dùng số nguyên lớn để hệ thống có thể SẮP XẾP (Sort) từ cao đến thấp
+
     salary_min = models.BigIntegerField(null=True, blank=True)
     salary_max = models.BigIntegerField(null=True, blank=True)
     
-    location = models.CharField(max_length=200) # Địa điểm làm việc
+    location = models.CharField(max_length=200)
     experience_level = models.CharField(
         max_length=20, 
         choices=EXPERIENCE_CHOICES,
         default="no_exp"
     )
-    # dùng để thống kê tổng số lượt xem trên tin
+
     views_count = models.PositiveIntegerField(default=0, editable=False,verbose_name="Số lượt xem tin")
-    # QUẢN LÝ THỜI GIAN (Phục vụ sắp xếp tin mới nhất)
+
     deadline = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

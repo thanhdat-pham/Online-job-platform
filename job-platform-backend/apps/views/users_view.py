@@ -9,6 +9,7 @@ from apps.serializers.employers_serializer import CompanySerializer
 from apps.models.employers import Company, Employer
 from apps.models.candidates import CandidateProfile
 
+
 from backend import settings
 User = get_user_model()
 
@@ -22,21 +23,21 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         user_serializer.is_valid(raise_exception=True)
 
         role = user_serializer.validated_data.get('role', '').upper()
-
+        full_name = user_serializer.validated_data.get('full_name', '')
         if role == 'EMPLOYER':
             company_id = request.data.get('company_id')
 
             if company_id:
-                # Chọn công ty có sẵn
+
                 try:
                     company = Company.objects.get(id=company_id)
                 except Company.DoesNotExist:
                     return Response({"company_id": "Công ty không tồn tại."}, status=status.HTTP_400_BAD_REQUEST)
                 with transaction.atomic():
                     user = user_serializer.save()
-                    Employer.objects.create(user=user, company=company)
+                    Employer.objects.create(user=user, company=company, full_name=full_name)
             else:
-                # Tự nhập công ty mới
+
                 company_data = {
                     'name': request.data.get('company_name', ''),
                     'address': request.data.get('company_address', ''),
@@ -123,7 +124,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
     def me(self, request):
         from apps.serializers.user_serializer import UserSerializer
         user = request.user
-        # Dùng select_related để tối ưu truy vấn (tránh N+1 query)
+
         if user.role == 'CANDIDATE':
             user = User.objects.select_related('candidate_profile').get(pk=user.pk)
         elif user.role == 'EMPLOYER':

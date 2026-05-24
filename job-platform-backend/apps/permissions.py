@@ -1,12 +1,10 @@
 from rest_framework import permissions
 
 
-# ─────────────────────────────────────────────
-# HELPER MIXINS  (kiểm tra role trên User model)
-# ─────────────────────────────────────────────
+
 
 class IsCandidate(permissions.BasePermission):
-    """User đã xác thực và có role CANDIDATE."""
+
     message = "Chức năng này chỉ dành cho tài khoản Ứng viên."
 
     def has_permission(self, request, view):
@@ -18,7 +16,7 @@ class IsCandidate(permissions.BasePermission):
 
 
 class IsEmployer(permissions.BasePermission):
-    """User đã xác thực và có role EMPLOYER."""
+
     message = "Chức năng này chỉ dành cho tài khoản Nhà tuyển dụng."
 
     def has_permission(self, request, view):
@@ -30,10 +28,7 @@ class IsEmployer(permissions.BasePermission):
 
 
 class IsVerifiedEmployer(permissions.BasePermission):
-    """
-    User đã xác thực, có role EMPLOYER, VÀ đã được Admin duyệt (is_verified).
-    Dùng cho các thao tác quan trọng: đăng tin, xem / duyệt đơn.
-    """
+
     message = "Tài khoản Nhà tuyển dụng của bạn chưa được xác minh."
 
     def has_permission(self, request, view):
@@ -46,7 +41,7 @@ class IsVerifiedEmployer(permissions.BasePermission):
 
 
 class IsAdminUser(permissions.BasePermission):
-    """User có role ADMIN (hoặc is_staff Django)."""
+
     message = "Chỉ Quản trị viên mới có quyền thực hiện thao tác này."
 
     def has_permission(self, request, view):
@@ -57,15 +52,10 @@ class IsAdminUser(permissions.BasePermission):
         )
 
 
-# ─────────────────────────────────────────────
-# OBJECT-LEVEL PERMISSIONS
-# ─────────────────────────────────────────────
+
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
-    """
-    Chỉ chủ sở hữu mới được sửa / xóa; người khác chỉ đọc.
-    Object cần có thuộc tính `user` trỏ về User.
-    """
+
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -73,10 +63,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class IsJobOwner(permissions.BasePermission):
-    """
-    Chỉ Employer sở hữu Job mới được sửa / xóa tin tuyển dụng đó.
-    Object cần có thuộc tính `employer.user`.
-    """
+
     message = "Bạn không có quyền thao tác trên tin tuyển dụng này."
 
     def has_object_permission(self, request, view, obj):
@@ -89,10 +76,7 @@ class IsJobOwner(permissions.BasePermission):
 
 
 class IsApplicationOwner(permissions.BasePermission):
-    """
-    Candidate chỉ được thao tác trên Application của chính mình.
-    Object cần có thuộc tính `candidate.user`.
-    """
+
     message = "Bạn không có quyền thao tác trên đơn ứng tuyển này."
 
     def has_object_permission(self, request, view, obj):
@@ -102,7 +86,5 @@ class IsApplicationOwner(permissions.BasePermission):
         )
 
 
-# ─────────────────────────────────────────────
-# (Backward-compat) Giữ lại tên cũ để không vỡ code hiện tại
-# ─────────────────────────────────────────────
+
 IsVerifiedUser = IsVerifiedEmployer
