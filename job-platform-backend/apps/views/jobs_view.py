@@ -10,6 +10,10 @@ from apps.serializers.candidates_serializer import ApplicationSerializer
 from apps.paginators import JobPaginator
 
 
+class JobCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = JobCategory.objects.all().order_by('name')
+    serializer_class = JobCategorySerializer
+    permission_classes = [permissions.AllowAny]
 class JobViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = JobSerializer
     pagination_class = JobPaginator

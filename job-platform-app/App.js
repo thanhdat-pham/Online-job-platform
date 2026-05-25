@@ -3,12 +3,25 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { PaperProvider, Icon } from "react-native-paper";
-
+import SelectCategory from "./screens/Employer/SelectCategory";
 import { MyUserContext } from "./configs/Contexts";
 import { MyUserReducer } from "./reducers/reducers";
 import { COLORS } from "./styles/Styles";
+import { registerTranslation } from 'react-native-paper-dates'
+registerTranslation('vi', {
+  save: 'Lưu',
+  selectSingle: 'Chọn ngày',
+  selectMultiple: 'Chọn các ngày',
+  selectRange: 'Chọn khoảng ngày',
+  notAccordingToDateFormat: (inputFormat) => `Định dạng phải là ${inputFormat}`,
+  mustBeDashed: 'Phải có dấu gạch ngang',
+  beginning: 'Bắt đầu',
+  end: 'Kết thúc',
+  typeInDate: 'Nhập ngày',
+  pickDateFromCalendar: 'Chọn ngày từ lịch',
+  close: 'Đóng',
+});
 
-// Screens
 import Home from "./screens/Home/Home";
 import JobDetail from "./screens/Jobs/JobDetail";
 import ApplyJob from "./screens/Jobs/ApplyJob";
@@ -16,13 +29,14 @@ import MyApplications from "./screens/Jobs/MyApplications";
 import Login from "./screens/User/Login";
 import Register from "./screens/User/Register";
 import Profile from "./screens/User/Profile";
-import CandidateProfile from "./screens/User/CandidateProfile"; // <--- ĐẢM BẢO ĐÃ CÓ DÒNG NÀY
+import CandidateProfile from "./screens/User/CandidateProfile";
 import EmployerDashboard from "./screens/Employer/EmployerDashboard";
 import PostJob from "./screens/Employer/PostJob";
 import ManageJobs from "./screens/Employer/ManageJobs";
 import ViewApplications from "./screens/Employer/ViewApplications";
 import EmployerProfile from "./screens/Employer/EmployerProfile";
 import Notifications from "./screens/Notifications/Notifications";
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,6 +46,8 @@ const HomeStack = () => (
     <Stack.Screen name="home-list" component={Home} options={{ title: 'Việc Làm' }} />
     <Stack.Screen name="job-detail" component={JobDetail} options={{ title: 'Chi tiết công việc' }} />
     <Stack.Screen name="apply-job" component={ApplyJob} options={{ title: 'Nộp hồ sơ' }} />
+    {/* Candidate cũng dùng SelectCategory để lọc tìm kiếm */}
+    <Stack.Screen name="select-category" component={SelectCategory} options={{ title: 'Chọn ngành nghề' }} />
   </Stack.Navigator>
 );
 
@@ -41,6 +57,8 @@ const EmployerStack = () => (
     <Stack.Screen name="post-job" component={PostJob} options={{ title: 'Đăng tin tuyển dụng' }} />
     <Stack.Screen name="manage-jobs" component={ManageJobs} options={{ title: 'Quản lý tin đăng' }} />
     <Stack.Screen name="view-applications" component={ViewApplications} options={{ title: 'Hồ sơ ứng tuyển' }} />
+    {/* 👇 Thêm route SelectCategory vào EmployerStack */}
+    <Stack.Screen name="select-category" component={SelectCategory} options={{ title: 'Chọn ngành nghề' }} />
   </Stack.Navigator>
 );
 
@@ -72,7 +90,7 @@ const TabNavigator = () => {
       {user !== null && (
         <Tab.Screen
           name="notifications"
-          component={Notifications} // Đảm bảo đã import component này
+          component={Notifications}
           options={{
             title: 'Thông báo',
             tabBarIcon: ({ color }) => <Icon source="bell" size={26} color={color} />
@@ -116,7 +134,7 @@ const TabNavigator = () => {
   );
 };
 
-// ĐÂY LÀ ĐOẠN QUAN TRỌNG NHẤT ĐỂ SỬA LỖI NAVIGATE
+
 const RootStack = createNativeStackNavigator();
 
 const App = () => {
@@ -127,13 +145,13 @@ const App = () => {
       <PaperProvider>
         <NavigationContainer>
           <RootStack.Navigator>
-            {/* Thẻ này bọc toàn bộ các Tab cũ của bạn */}
+
             <RootStack.Screen
               name="main-tabs"
               component={TabNavigator}
               options={{ headerShown: false }}
             />
-            {/* Đưa CandidateProfile lên làm Stack ngoài cùng để gọi từ đâu cũng được */}
+
             <RootStack.Screen
               name="CandidateProfile"
               component={CandidateProfile}

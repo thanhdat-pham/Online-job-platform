@@ -99,7 +99,7 @@ const AppCard = ({ item, jobId, onUpdate }) => {
 
     return (
         <View style={Styles.card}>
-            {/* Header */}
+
             <View style={[Styles.row, { justifyContent: 'space-between' }]}>
                 <View style={{ flex: 1 }}>
                     <Text style={{ fontWeight: '700', fontSize: 14, color: COLORS.text }}>
@@ -112,14 +112,14 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 </View>
             </View>
 
-            {/* Cover letter */}
+
             {item.cover_letter && (
                 <Text style={{ color: COLORS.text, marginTop: 8, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>
                     📄 {item.cover_letter}
                 </Text>
             )}
 
-            {/* Employer note */}
+
             {item.employers_note ? (
                 <View style={{ marginTop: 6, padding: 8, backgroundColor: '#FFF9C4', borderRadius: 6 }}>
                     <Text style={{ fontSize: 12, color: '#5D4037' }}>📝 Ghi chú: {item.employers_note}</Text>
@@ -130,10 +130,9 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 Nộp lúc: {new Date(item.applied_at).toLocaleString('vi-VN')}
             </Text>
 
-            {/* Action buttons */}
             <View style={[Styles.row, { marginTop: 10, flexWrap: 'wrap', gap: 6 }]}>
 
-                {/* ✅ FIX: Xem CV inline thay vì Linking.openURL */}
+
                 {cvUrl ? (
                     <Button
                         compact
@@ -147,13 +146,11 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                     <Text style={{ fontSize: 11, color: COLORS.textLight, alignSelf: 'center' }}>Chưa có CV</Text>
                 )}
 
-                {/* Note button */}
                 <Button compact mode="outlined" icon="note-edit"
                     onPress={() => setNoteVisible(!noteVisible)}>
                     Ghi chú
                 </Button>
 
-                {/* Status menu */}
                 <Menu
                     visible={menuVisible}
                     onDismiss={() => setMenuVisible(false)}
@@ -170,7 +167,7 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 </Menu>
             </View>
 
-            {/* Note input */}
+
             {noteVisible && (
                 <View style={{ marginTop: 10 }}>
                     <TextInput
@@ -188,7 +185,7 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 </View>
             )}
 
-            {/* CV Viewer Modal */}
+
             <CVViewerModal
                 url={cvUrl}
                 visible={cvVisible}

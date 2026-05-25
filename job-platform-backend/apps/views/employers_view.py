@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-
+from apps.models.user import VerificationRequest
 from apps.models.employers import Employer
 from apps.models.jobs import Job
 from apps.models.candidates import Application
@@ -10,13 +10,54 @@ from apps.serializers.jobs_serializer import JobSerializer
 from apps.serializers.employers_serializer import EmployerProfileSerializer
 from apps.serializers.candidates_serializer import ApplicationSerializer
 from apps.paginators import JobPaginator
-from apps.permissions import IsEmployer
-
+from apps.permissions import IsEmployer, IsVerifiedEmployer
+from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 
 class EmployerProfileViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsEmployer]
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
+    @action(detail=False, methods=['post'], url_path='request-verification')
+    def request_verification(self, request):
+        user = request.user
+
+        if user.is_verified:
+            return Response(
+                {'detail': 'Tài khoản đã được xác minh.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        already_approved = VerificationRequest.objects.filter(
+            employer=user, status='approved'
+        ).exists()
+        if already_approved:
+            return Response(
+                {'detail': 'Tài khoản đã được xác minh.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        last_request = VerificationRequest.objects.filter(employer=user).order_by('-submitted_at').first()
+        if last_request and last_request.status == 'pending':
+            return Response({'detail': 'Bạn đã có yêu cầu đang chờ xét duyệt.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        VerificationRequest.objects.create(employer=user, status='pending')
+        return Response({'detail': 'Đã gửi yêu cầu xác minh.'}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='verification-status')
+    def verification_status(self, request):
+        requests_qs = VerificationRequest.objects.filter(employer=request.user)
+
+        if requests_qs.filter(status='approved').exists():
+            return Response({'status': 'approved'})
+
+        latest = requests_qs.first()
+        if not latest:
+            return Response({'status': None})
+        return Response({
+            'status': latest.status,
+            'note': latest.note,
+            'submitted_at': latest.submitted_at,
+        })
     @action(detail=False, methods=['get', 'patch'], url_path='profile')
     def profile(self, request):
         try:
@@ -34,8 +75,9 @@ class EmployerProfileViewSet(viewsets.ViewSet):
         return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EmployerJobViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsEmployer]
+class EmployerJobViewSet(viewsets.ModelViewSet):
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated, IsEmployer, IsVerifiedEmployer]
     pagination_class = JobPaginator
     def get_employer(self, user):
         try:
@@ -143,7 +185,7 @@ class EmployerJobViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
-        """Thống kê NTD: số hồ sơ, hiệu quả theo tháng"""
+
         from django.db.models import Count
         from django.db.models.functions import TruncMonth
         import datetime

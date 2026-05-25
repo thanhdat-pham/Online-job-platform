@@ -71,7 +71,7 @@ class UserSerializer(UserBaseSerializer):
         fields = [
              "id", "username", "email", "role", "phone_number",
             "avatar", "is_active", "date_joined", "full_name",
-            "company_name", "position", "candidate_profile", "employer_profile"
+            "company_name", "position", "candidate_profile", "employer_profile" , "is_verified",
         ]
         read_only_fields = ["id", "username", "date_joined"]
 

@@ -6,7 +6,7 @@ import { authApis, endpoints } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/Contexts";
 import Styles, { COLORS } from "../../styles/Styles";
 
-const SectionLabel = ({ icon, label }) => (   // ← giữ nguyên dòng này
+const SectionLabel = ({ icon, label }) => (
     <Text style={{ fontWeight: '700', fontSize: 15, color: COLORS.primary, marginTop: 20, marginBottom: 6 }}>
         {icon}  {label}
     </Text>

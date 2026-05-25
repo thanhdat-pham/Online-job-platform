@@ -35,7 +35,7 @@ class Job(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField()
-    requirements = models.TextField()
+    requirements = models.TextField(blank=True)
     benefits = models.TextField(blank=True)
     
 

@@ -101,7 +101,7 @@ const Register = () => {
                 <RadioButton.Item label="Nhà tuyển dụng" value="employer" color={COLORS.primary} />
             </RadioButton.Group>
             {CANDIDATE_FIELDS.map(f => {
-                // Nếu là mật khẩu thì trả về TextInput đặc biệt
+
                 if (f.field === 'password' || f.field === 'confirm') {
                     return (
                         <TextInput
@@ -121,7 +121,7 @@ const Register = () => {
                     );
                 }
 
-                // Nếu không phải mật khẩu thì trả về TextInput bình thường
+
                 return (
                     <TextInput
                         key={f.field}
@@ -151,6 +151,25 @@ const Register = () => {
                             <TouchableOpacity onPress={() => setUseCustomCompany(false)}><Text style={{ color: COLORS.primary, marginBottom: 10 }}>← Quay lại chọn từ danh sách</Text></TouchableOpacity>
                             <TextInput style={Styles.input} label="Tên công ty" value={form.company_name || ''} onChangeText={t => setForm({ ...form, company_name: t })} />
                             <TextInput style={Styles.input} label="Địa chỉ công ty" value={form.company_address || ''} onChangeText={t => setForm({ ...form, company_address: t })} />
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    let res = await ImgPicker.launchImageLibraryAsync();
+                                    if (!res.canceled) setCompanyLogo(res.assets[0]);
+                                }}
+                                style={{
+                                    padding: 14,
+                                    borderRadius: 10,
+                                    borderWidth: 1.5,
+                                    borderStyle: 'dashed',
+                                    borderColor: COLORS.primary,
+                                    alignItems: 'center',
+                                    marginTop: 10
+                                }}
+                            >
+                                <Text style={{ color: COLORS.primary }}>
+                                    {companyLogo ? ' Đã chọn logo công ty' : 'Chọn logo công ty'}
+                                </Text>
+                            </TouchableOpacity>
                         </>
                     )}
                 </View>

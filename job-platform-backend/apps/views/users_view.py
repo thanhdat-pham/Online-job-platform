@@ -17,7 +17,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = RegisterSerializer
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
-
+    permission_classes = [permissions.AllowAny]
     def create(self, request, *args, **kwargs):
         user_serializer = RegisterSerializer(data=request.data)
         user_serializer.is_valid(raise_exception=True)
