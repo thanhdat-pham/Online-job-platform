@@ -61,7 +61,7 @@ const Login = () => {
                     label={f.label}
                     value={form[f.field] || ''}
                     onChangeText={t => setForm({ ...form, [f.field]: t })}
-                    // Chỉ ẩn mật khẩu nếu trường đó là 'password' và showPassword đang false
+
                     secureTextEntry={f.field === 'password' && !showPassword}
                     right={
                         f.field === 'password' ? (

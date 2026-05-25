@@ -34,6 +34,10 @@ export const endpoints = {
     'notification-read': (id) => `/notifications/${id}/read/`,
     'notifications-read-all': '/notifications/read-all/',
     'notifications-unread-count': '/notifications/unread-count/',
+
+    'request-verification': '/employer/profile/request-verification/',
+    'verification-status': '/employer/profile/verification-status/',
+    'job-categories': '/categories/',
 };
 
 export const authApis = (token) => axios.create({

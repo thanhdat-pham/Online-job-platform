@@ -87,4 +87,12 @@ class IsApplicationOwner(permissions.BasePermission):
 
 
 
-IsVerifiedUser = IsVerifiedEmployer
+class IsVerifiedUser(permissions.BasePermission):
+    message = "Tài khoản của bạn chưa được xác minh."
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_verified
+        )

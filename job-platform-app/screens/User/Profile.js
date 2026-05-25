@@ -1,22 +1,67 @@
 import { View, ScrollView, Alert } from "react-native";
 import { Text, Button, Divider, Avatar } from "react-native-paper";
-import { useContext } from "react";
+import { useContext, useState, useCallback } from "react";
 import { MyUserContext } from "../../configs/Contexts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Styles, { COLORS } from "../../styles/Styles";
+import { authApis, endpoints } from "../../configs/Apis";
+import { useFocusEffect } from "@react-navigation/native";
 
 const Profile = ({ navigation }) => {
     const [user, dispatch] = useContext(MyUserContext);
 
-    // Kiểm tra trạng thái hoàn thiện hồ sơ
+    const [verifyStatus, setVerifyStatus] = useState(null);
+    const [verifyLoading, setVerifyLoading] = useState(false);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (user?.role === 'EMPLOYER') {
+                const fetchStatus = async () => {
+                    try {
+                        const token = await AsyncStorage.getItem('token');
+
+                        const userRes = await authApis(token).get(endpoints['current-user']);
+                        const freshUser = userRes.data;
+                        console.log('freshUser:', JSON.stringify(freshUser));
+                        if (freshUser.is_verified !== user.is_verified) {
+                            dispatch({ type: "LOGIN", payload: freshUser });
+                        }
+
+                        if (!freshUser.is_verified) {
+                            const res = await authApis(token).get(endpoints['verification-status']);
+                            setVerifyStatus(res.data.status);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+                fetchStatus();
+            }
+        }, [user?.role])
+    );
+
+    const sendVerifyRequest = async () => {
+        setVerifyLoading(true);
+        try {
+            const token = await AsyncStorage.getItem('token');
+            await authApis(token).post(endpoints['request-verification']);
+            setVerifyStatus('pending');
+            Alert.alert('Đã gửi', 'Yêu cầu xác minh đã được gửi. Admin sẽ xét duyệt sớm.');
+        } catch (e) {
+            const msg = e?.response?.data?.detail || 'Không thể gửi yêu cầu.';
+            Alert.alert('Lỗi', msg);
+        } finally {
+            setVerifyLoading(false);
+        }
+    };
+
+    const profile = user?.candidate_profile;
 
     const isProfileComplete = !!(
         (profile?.education || "").trim().length > 0 &&
         (profile?.skills || "").trim().length > 0 &&
         (profile?.experience || "").trim().length > 0
     );
-    const profile = user?.candidate_profile;
-
 
     const logout = async () => {
         await AsyncStorage.removeItem('token');
@@ -27,21 +72,16 @@ const Profile = ({ navigation }) => {
 
     const getProfileInfo = () => {
         if (user?.role === 'EMPLOYER') {
-            // Ưu tiên lấy từ employer_profile nếu có, sau đó là lấy trực tiếp nếu dữ liệu phẳng
             const employer = user?.employer_profile || user;
             const company = employer?.company_details || {};
 
             return [
                 { label: 'Tên công ty', value: company?.name },
-                {
-                    label: 'Địa chỉ',
-                    value: company?.address
-                },
+                { label: 'Địa chỉ', value: company?.address },
                 { label: 'Email', value: user?.email },
             ];
         }
 
-        // Dành cho Candidate
         return [
             { label: 'Họ và tên', value: user?.full_name },
             { label: 'Số điện thoại', value: user?.phone_number || 'Chưa cập nhật' },
@@ -67,11 +107,34 @@ const Profile = ({ navigation }) => {
                 ))}
             </View>
 
-            {/* Thông báo tình trạng hồ sơ */}
+            {user?.role === 'EMPLOYER' && (
+                <View style={{ alignItems: 'center', marginVertical: 10 }}>
+                    {user?.is_verified ? (
+                        <View style={{ backgroundColor: '#e8f5e9', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5 }}>
+                            <Text style={{ color: '#2e7d32', fontWeight: '600' }}>✅ Tài khoản đã xác minh</Text>
+                        </View>
+                    ) : verifyStatus === 'pending' ? (
+                        <View style={{ backgroundColor: '#fff8e1', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5 }}>
+                            <Text style={{ color: '#e65100' }}>⏳ Đang chờ admin xét duyệt...</Text>
+                        </View>
+                    ) : verifyStatus === 'rejected' ? (
+                        <>
+                            <Text style={{ color: '#c62828', marginBottom: 8 }}>❌ Yêu cầu đã bị từ chối</Text>
+                            <Button mode="contained" onPress={sendVerifyRequest} loading={verifyLoading} style={{ backgroundColor: COLORS.primary }}>
+                                Gửi lại yêu cầu xác minh
+                            </Button>
+                        </>
+                    ) : (
+                        <Button mode="contained" onPress={sendVerifyRequest} loading={verifyLoading} style={{ backgroundColor: COLORS.primary }}>
+                            🛡️ Gửi yêu cầu xác minh
+                        </Button>
+                    )}
+                </View>
+            )}
+
             {user?.role === 'CANDIDATE' && !isProfileComplete && (
                 <Text style={{ color: COLORS.primary, fontSize: 13, marginVertical: 12, fontStyle: 'italic' }}>
                     ⚠️ Bạn chưa cập nhật đầy đủ hồ sơ.
-
                 </Text>
             )}
 
@@ -80,15 +143,12 @@ const Profile = ({ navigation }) => {
                     mode="contained"
                     onPress={() => {
                         if (user?.role === 'EMPLOYER') {
-                            navigation.navigate('EmployerProfile'); // Điều hướng tới màn hình mới của NTD
+                            navigation.navigate('EmployerProfile');
                         } else {
-                            navigation.navigate('CandidateProfile'); // Giữ nguyên cho ứng viên
+                            navigation.navigate('CandidateProfile');
                         }
                     }}
-                    style={{
-                        marginBottom: 10,
-                        backgroundColor: COLORS.primary
-                    }}
+                    style={{ marginBottom: 10, backgroundColor: COLORS.primary }}
                 >
                     {user?.role === 'EMPLOYER' ? "Sửa hồ sơ NTD" : (isProfileComplete ? "Sửa hồ sơ" : "Hoàn thiện hồ sơ")}
                 </Button>
