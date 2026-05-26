@@ -9,7 +9,7 @@ import { MyUserReducer } from "./reducers/reducers";
 import { COLORS } from "./styles/Styles";
 import { registerTranslation } from 'react-native-paper-dates';
 import CandidateProfileView from "./screens/Employer/CandidateProfileView";
-
+import SavedJobs from "./screens/Jobs/SaveJobs";
 registerTranslation('vi', {
   save: 'Lưu',
   selectSingle: 'Chọn ngày',
@@ -38,6 +38,7 @@ import ManageJobs from "./screens/Employer/ManageJobs";
 import ViewApplications from "./screens/Employer/ViewApplications";
 import EmployerProfile from "./screens/Employer/EmployerProfile";
 import Notifications from "./screens/Notifications/Notifications";
+import ChangePassword from "./screens/User/ChangePassword";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -120,6 +121,11 @@ const TabNavigator = () => {
             options={{ title: 'Hồ sơ của tôi', tabBarIcon: ({ color }) => <Icon source="file-document" size={26} color={color} />, headerShown: true, headerTitle: 'Hồ sơ ứng tuyển', headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: '#fff' }}
           />
           <Tab.Screen
+            name="saved-jobs"
+            component={SavedJobs}
+            options={{ title: "Đã lưu", tabBarIcon: ({ color }) => <Icon source="bookmark" size={26} color={color} />, headerShown: true, headerTitle: "Việc làm đã lưu", headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: "#fff" }}
+          />
+          <Tab.Screen
             name="profile"
             component={Profile}
             options={{ title: 'Tài khoản', tabBarIcon: ({ color }) => <Icon source="account-circle" size={26} color={color} />, headerShown: true, headerTitle: 'Hồ sơ', headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: '#fff' }}
@@ -155,6 +161,16 @@ const App = () => {
               name="EmployerProfile"
               component={EmployerProfile}
               options={{ title: 'Hồ sơ nhà tuyển dụng', headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' } }}
+            />
+            <RootStack.Screen
+              name="ChangePassword"
+              component={ChangePassword}
+              options={{
+                title: "Đổi mật khẩu",
+                headerStyle: { backgroundColor: COLORS.primary },
+                headerTintColor: "#fff",
+                headerTitleStyle: { fontWeight: "700" },
+              }}
             />
           </RootStack.Navigator>
         </NavigationContainer>

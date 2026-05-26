@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-
+from django.db.models import Q
 from apps.models.jobs import Job, JobCategory
 from apps.models.candidates import CandidateProfile, Application
 from apps.serializers.jobs_serializer import JobSerializer, JobCategorySerializer

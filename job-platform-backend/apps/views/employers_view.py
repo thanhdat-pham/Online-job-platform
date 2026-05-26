@@ -12,8 +12,14 @@ from apps.serializers.candidates_serializer import ApplicationSerializer
 from apps.paginators import JobPaginator
 from apps.permissions import IsEmployer, IsVerifiedEmployer
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class EmployerProfileViewSet(viewsets.ViewSet):
+    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -58,7 +64,9 @@ class EmployerProfileViewSet(viewsets.ViewSet):
             'note': latest.note,
             'submitted_at': latest.submitted_at,
         })
-    @action(detail=False, methods=['get', 'patch'], url_path='profile')
+
+
+    @action(detail=False, methods=['get', 'patch'], url_path='')
     def profile(self, request):
         try:
             employer = request.user.employer_profile
@@ -72,6 +80,7 @@ class EmployerProfileViewSet(viewsets.ViewSet):
         if ser.is_valid():
             ser.save()
             return Response(ser.data)
+
         return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -185,37 +194,110 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
-
-        from django.db.models import Count
-        from django.db.models.functions import TruncMonth
+        from django.db.models import Count, Avg, Q
+        from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
         import datetime
 
         employer = self.get_employer(request.user)
         if not employer:
             return Response({'detail': 'Chưa có hồ sơ nhà tuyển dụng.'}, status=status.HTTP_404_NOT_FOUND)
 
+
+        period = request.query_params.get('period', 'month')
+
         jobs = Job.objects.filter(employer=employer)
+        all_apps = Application.objects.filter(job__in=jobs)
+
+
         total_jobs = jobs.count()
-        total_applications = Application.objects.filter(job__in=jobs).count()
+        total_applications = all_apps.count()
+        total_views = jobs.aggregate(total=Count('views_count'))['total'] or 0
         total_views = sum(j.views_count for j in jobs)
 
+        accepted = all_apps.filter(status='accepted').count()
+        rejected = all_apps.filter(status='rejected').count()
+        pending = all_apps.filter(status='pending').count()
+        interviewing = all_apps.filter(status='interviewing').count()
 
-        six_months_ago = datetime.date.today().replace(day=1)
-        monthly = (
-            Application.objects
-            .filter(job__in=jobs)
-            .annotate(month=TruncMonth('applied_at'))
-            .values('month')
-            .annotate(count=Count('id'))
-            .order_by('month')
+
+        acceptance_rate = round(accepted / total_applications * 100, 1) if total_applications else 0
+
+
+        avg_rating = all_apps.filter(rating__isnull=False).aggregate(avg=Avg('rating'))['avg']
+        avg_rating = round(avg_rating, 1) if avg_rating else None
+
+
+        if period == 'quarter':
+            trunc_fn = TruncQuarter
+            fmt = lambda d: f"Q{((d.month - 1) // 3) + 1}/{d.year}"
+        elif period == 'year':
+            trunc_fn = TruncYear
+            fmt = lambda d: str(d.year)
+        else:  # month (mặc định)
+            trunc_fn = TruncMonth
+            fmt = lambda d: d.strftime('%m/%Y')
+
+        trend = (
+            all_apps
+            .annotate(period=trunc_fn('applied_at'))
+            .values('period')
+            .annotate(
+                total=Count('id'),
+                accepted=Count('id', filter=Q(status='accepted')),
+                rejected=Count('id', filter=Q(status='rejected')),
+            )
+            .order_by('period')
+        )
+
+
+        job_performance = (
+            jobs.annotate(
+                app_count=Count('applications'),
+                accepted_count=Count('applications', filter=Q(applications__status='accepted')),
+                avg_rating=Avg('applications__rating'),
+            )
+            .values('id', 'title', 'views_count', 'app_count', 'accepted_count', 'avg_rating', 'deadline', 'created_at')
+            .order_by('-app_count')[:10]  # top 10 tin có nhiều hồ sơ nhất
         )
 
         return Response({
+
             'total_jobs': total_jobs,
             'total_applications': total_applications,
             'total_views': total_views,
-            'monthly_applications': [
-                {'month': m['month'].strftime('%Y-%m'), 'count': m['count']}
-                for m in monthly
-            ]
+            'acceptance_rate': acceptance_rate,
+            'avg_rating': avg_rating,
+
+
+            'status_breakdown': {
+                'pending': pending,
+                'interviewing': interviewing,
+                'accepted': accepted,
+                'rejected': rejected,
+            },
+
+
+            'trend': [
+                {
+                    'label': fmt(t['period']),
+                    'total': t['total'],
+                    'accepted': t['accepted'],
+                    'rejected': t['rejected'],
+                }
+                for t in trend
+            ],
+
+
+            'job_performance': [
+                {
+                    'id': j['id'],
+                    'title': j['title'],
+                    'views': j['views_count'],
+                    'applications': j['app_count'],
+                    'accepted': j['accepted_count'],
+                    'avg_rating': round(j['avg_rating'], 1) if j['avg_rating'] else None,
+                    'deadline': j['deadline'],
+                }
+                for j in job_performance
+            ],
         })

@@ -153,7 +153,7 @@ const Profile = ({ navigation }) => {
                     {user?.role === 'EMPLOYER' ? "Sửa hồ sơ NTD" : (isProfileComplete ? "Sửa hồ sơ" : "Hoàn thiện hồ sơ")}
                 </Button>
 
-                <Button icon="lock" mode="outlined" onPress={() => Alert.alert("Thông báo", "Chức năng đổi mật khẩu đang được phát triển!")} style={{ marginBottom: 10 }}>
+                <Button icon="lock" mode="outlined" onPress={() => navigation.navigate("")} style={{ marginBottom: 10 }}>
                     Đổi mật khẩu
                 </Button>
 

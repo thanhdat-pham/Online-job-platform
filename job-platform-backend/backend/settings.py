@@ -88,7 +88,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -171,3 +171,5 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
 CLIENT_ID = os.getenv('OAUTH2_CLIENT_ID')
 CLIENT_SECRET = os.getenv('OAUTH2_CLIENT_SECRET')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
