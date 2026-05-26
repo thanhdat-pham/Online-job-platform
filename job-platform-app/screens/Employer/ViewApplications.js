@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { FlatList, View, Text, ActivityIndicator, Alert, Linking, Modal, StyleSheet } from "react-native";
+import { FlatList, View, Text, ActivityIndicator, Alert, TouchableOpacity, ScrollView } from "react-native";
 import { Button, Menu, TextInput } from "react-native-paper";
-import { WebView } from "react-native-webview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
 import Styles, { COLORS } from "../../styles/Styles";
+import { useNavigation } from "@react-navigation/native";
 
 const STATUS_OPTIONS = [
-    { value: 'reviewed', label: '📖 Đã xem xét' },
-    { value: 'interviewing', label: '📞 Mời phỏng vấn' },
-    { value: 'accepted', label: '✅ Chấp nhận' },
-    { value: 'rejected', label: '❌ Từ chối' },
+    { value: 'reviewed', label: '📖 Đã xem xét', display: 'Đã xem xét' },
+    { value: 'interviewing', label: '📞 Mời phỏng vấn', display: 'Phỏng vấn' },
+    { value: 'accepted', label: '✅ Chấp nhận', display: 'Chấp nhận' },
+    { value: 'rejected', label: '❌ Từ chối', display: 'Từ chối' },
 ];
 
 const statusInfo = {
@@ -21,49 +21,14 @@ const statusInfo = {
     rejected: { label: 'Từ chối', color: '#C62828' },
 };
 
-
-const CVViewerModal = ({ url, visible, onClose }) => {
-    if (!url) return null;
-
-
-    const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-
-    return (
-        <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-            <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>📄 Xem CV ứng viên</Text>
-                <Button onPress={onClose} textColor={COLORS.primary}>Đóng</Button>
-            </View>
-            <WebView
-                source={{ uri: googleViewerUrl }}
-                style={{ flex: 1 }}
-                startInLoadingState
-                renderLoading={() => (
-                    <View style={Styles.center}>
-                        <ActivityIndicator color={COLORS.primary} size="large" />
-                        <Text style={{ marginTop: 8, color: COLORS.textLight }}>Đang tải CV...</Text>
-                    </View>
-                )}
-            />
-        </Modal>
-    );
-};
-
-
-const AppCard = ({ item, jobId, onUpdate }) => {
+const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
     const [menuVisible, setMenuVisible] = useState(false);
     const [noteVisible, setNoteVisible] = useState(false);
-    const [cvVisible, setCvVisible] = useState(false);
     const [note, setNote] = useState(item.employers_note || '');
     const [savingNote, setSavingNote] = useState(false);
 
     const info = statusInfo[item.status] || { label: item.status, color: COLORS.primary };
-    const cvUrl = item.candidate?.cv_file;
-    const candidateName =
-        item.candidate?.full_name ||
-        `${item.candidate?.first_name || ''} ${item.candidate?.last_name || ''}`.trim() ||
-        item.candidate?.username ||
-        'Ứng viên';
+    const candidateName = item.candidate_name || 'Ứng viên';
 
     const updateStatus = async (newStatus) => {
         setMenuVisible(false);
@@ -73,7 +38,10 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 application_id: item.id,
                 status: newStatus,
             });
-            onUpdate(item.id, { status: newStatus });
+            onUpdate(item.id, {
+                status: newStatus,
+                status_display: STATUS_OPTIONS.find(s => s.value === newStatus)?.display ?? newStatus,
+            });
         } catch {
             Alert.alert("Lỗi", "Không thể cập nhật trạng thái!");
         }
@@ -99,26 +67,25 @@ const AppCard = ({ item, jobId, onUpdate }) => {
 
     return (
         <View style={Styles.card}>
-
-            <View style={[Styles.row, { justifyContent: 'space-between' }]}>
+            <View style={[Styles.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: '700', fontSize: 14, color: COLORS.text }}>
+                    <Text style={{ fontWeight: '700', fontSize: 15, color: COLORS.primary }}>
                         {candidateName}
                     </Text>
-                    <Text style={{ color: COLORS.textLight, fontSize: 12 }}>@{item.candidate?.username}</Text>
+                    <Text style={{ color: COLORS.textLight, fontSize: 12, marginTop: 2 }}>
+                        Nộp lúc: {new Date(item.applied_at).toLocaleString('vi-VN')}
+                    </Text>
                 </View>
                 <View style={[Styles.badge, { backgroundColor: info.color }]}>
                     <Text style={Styles.badgeText}>{info.label}</Text>
                 </View>
             </View>
 
-
-            {item.cover_letter && (
+            {item.cover_letter ? (
                 <Text style={{ color: COLORS.text, marginTop: 8, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>
                     📄 {item.cover_letter}
                 </Text>
-            )}
-
+            ) : null}
 
             {item.employers_note ? (
                 <View style={{ marginTop: 6, padding: 8, backgroundColor: '#FFF9C4', borderRadius: 6 }}>
@@ -126,37 +93,18 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                 </View>
             ) : null}
 
-            <Text style={{ color: COLORS.textLight, fontSize: 11, marginTop: 6 }}>
-                Nộp lúc: {new Date(item.applied_at).toLocaleString('vi-VN')}
-            </Text>
-
             <View style={[Styles.row, { marginTop: 10, flexWrap: 'wrap', gap: 6 }]}>
-
-
-                {cvUrl ? (
-                    <Button
-                        compact
-                        mode="outlined"
-                        icon="file-document"
-                        onPress={() => setCvVisible(true)}
-                    >
-                        Xem CV
-                    </Button>
-                ) : (
-                    <Text style={{ fontSize: 11, color: COLORS.textLight, alignSelf: 'center' }}>Chưa có CV</Text>
-                )}
-
-                <Button compact mode="outlined" icon="note-edit"
-                    onPress={() => setNoteVisible(!noteVisible)}>
+                <Button compact mode="outlined" icon="account" onPress={() => onViewProfile(item.candidate)}>
+                    Xem hồ sơ
+                </Button>
+                <Button compact mode="outlined" icon="note-edit" onPress={() => setNoteVisible(!noteVisible)}>
                     Ghi chú
                 </Button>
-
                 <Menu
                     visible={menuVisible}
                     onDismiss={() => setMenuVisible(false)}
                     anchor={
-                        <Button compact mode="outlined" style={{ alignSelf: 'flex-start' }}
-                            onPress={() => setMenuVisible(true)}>
+                        <Button compact mode="outlined" onPress={() => setMenuVisible(true)}>
                             Trạng thái ▾
                         </Button>
                     }
@@ -166,7 +114,6 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                     ))}
                 </Menu>
             </View>
-
 
             {noteVisible && (
                 <View style={{ marginTop: 10 }}>
@@ -184,68 +131,123 @@ const AppCard = ({ item, jobId, onUpdate }) => {
                     </Button>
                 </View>
             )}
-
-
-            <CVViewerModal
-                url={cvUrl}
-                visible={cvVisible}
-                onClose={() => setCvVisible(false)}
-            />
         </View>
     );
 };
 
+const JobSelector = ({ jobs, selectedJob, onSelect }) => (
+    <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            gap: 8,
+        }}
+    >
+        {jobs.map(job => (
+            <TouchableOpacity
+                key={job.id}
+                onPress={() => onSelect(job)}
+                activeOpacity={0.75}
+                style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    alignSelf: 'flex-start',
+                    backgroundColor: selectedJob?.id === job.id ? COLORS.primary : '#f0f0f0',
+                    borderWidth: selectedJob?.id === job.id ? 0 : 1,
+                    borderColor: '#ddd',
+                }}
+            >
+                <Text style={{
+                    fontSize: 13,
+                    fontWeight: '600',
+                    color: selectedJob?.id === job.id ? '#fff' : '#333',
+                }}>
+                    {job.title}
+                </Text>
+            </TouchableOpacity>
+        ))}
+    </ScrollView>
+);
 
-const ViewApplications = ({ route }) => {
-    const { jobId, jobTitle } = route.params || {};
+const ViewApplications = () => {
+    const nav = useNavigation();
+    const [jobs, setJobs] = useState([]);
+    const [selectedJob, setSelectedJob] = useState(null);
     const [apps, setApps] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingJobs, setLoadingJobs] = useState(true);
+    const [loadingApps, setLoadingApps] = useState(false);
 
-    const load = async () => {
+    const loadJobs = async () => {
         try {
-            setLoading(true);
+            setLoadingJobs(true);
             const token = await AsyncStorage.getItem('token');
-            const res = await authApis(token).get(endpoints['employer-job-applications'](jobId));
-            setApps(res.data);
+            const res = await authApis(token).get(endpoints['employer-jobs']);
+            const data = res.data.results ?? res.data;
+            setJobs(data);
+            if (data.length > 0) setSelectedJob(data[0]);
         } catch (ex) { console.error(ex); }
-        finally { setLoading(false); }
+        finally { setLoadingJobs(false); }
+    };
+
+    const loadApps = async (job) => {
+        if (!job) return;
+        try {
+            setLoadingApps(true);
+            const token = await AsyncStorage.getItem('token');
+            const res = await authApis(token).get(endpoints['employer-job-applications'](job.id));
+            setApps(res.data.results ?? res.data);
+        } catch (ex) { console.error(ex); }
+        finally { setLoadingApps(false); }
     };
 
     const handleUpdate = (appId, updates) => {
         setApps(prev => prev.map(a => a.id === appId ? { ...a, ...updates } : a));
     };
 
-    useEffect(() => { if (jobId) load(); }, [jobId]);
+    useEffect(() => { loadJobs(); }, []);
+    useEffect(() => { if (selectedJob) loadApps(selectedJob); }, [selectedJob]);
 
-    if (loading) return <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }} />;
+    if (loadingJobs) return <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }} />;
+
+    if (jobs.length === 0) return (
+        <View style={[Styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <Text style={{ fontSize: 40, marginBottom: 12 }}>📋</Text>
+            <Text style={{ fontSize: 16, color: COLORS.textLight }}>Bạn chưa đăng tin tuyển dụng nào</Text>
+        </View>
+    );
 
     return (
-        <FlatList
-            style={Styles.container}
-            data={apps}
-            keyExtractor={item => String(item.id)}
-            ListHeaderComponent={jobTitle ? <Text style={Styles.sectionHeader}>Hồ sơ cho: {jobTitle}</Text> : null}
-            ListEmptyComponent={<Text style={Styles.emptyText}>Chưa có hồ sơ nào</Text>}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            renderItem={({ item }) => <AppCard item={item} jobId={jobId} onUpdate={handleUpdate} />}
-        />
+        <View style={Styles.container}>
+            <JobSelector jobs={jobs} selectedJob={selectedJob} onSelect={setSelectedJob} />
+            {loadingApps
+                ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 30 }} />
+                : <FlatList
+                    data={apps}
+                    keyExtractor={item => String(item.id)}
+                    ListHeaderComponent={
+                        <Text style={Styles.sectionHeader}>
+                            Hồ sơ: {selectedJob?.title} ({apps.length})
+                        </Text>
+                    }
+                    ListEmptyComponent={<Text style={Styles.emptyText}>Chưa có hồ sơ nào</Text>}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                    renderItem={({ item }) => (
+                        <AppCard
+                            item={item}
+                            jobId={selectedJob?.id}
+                            onUpdate={handleUpdate}
+                            onViewProfile={(candidateId) => nav.navigate('candidate-profile-view', { candidateId })}
+                        />
+                    )}
+                />
+            }
+        </View>
     );
 };
-
-const styles = StyleSheet.create({
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        backgroundColor: '#fff',
-    },
-    modalTitle: {
-        fontWeight: '700',
-        fontSize: 16,
-    },
-});
 
 export default ViewApplications;

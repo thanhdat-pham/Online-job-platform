@@ -1,9 +1,10 @@
-import { View, FlatList, Alert } from "react-native";
+import { View, FlatList, Alert, ActivityIndicator } from "react-native";
 import { Text, Card, Chip, Button } from "react-native-paper";
 import { useState, useEffect, useCallback } from "react";
 import { authApis, endpoints } from "../../configs/Apis";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Styles, { COLORS } from "../../styles/Styles";
+import { useNavigation } from "@react-navigation/native";
 
 const STATUS_CONFIG = {
     pending: { label: 'Chờ xử lý', color: '#F57C00', bg: '#FFF3E0' },
@@ -23,18 +24,28 @@ const MyApplications = () => {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [withdrawing, setWithdrawing] = useState(null);
+    const navigation = useNavigation();
 
     const load = useCallback(async () => {
         try {
             setLoading(true);
             const token = await AsyncStorage.getItem('token');
             const res = await authApis(token).get(endpoints['my-applications']);
-            setApplications(res.data);
-        } catch (e) { console.error(e); }
-        finally { setLoading(false); }
+            const data = res.data.results ?? res.data;
+            setApplications(data);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => {
+        const unsubscribe = navigation.addListener("focus", () => {
+            load();
+        });
+        return unsubscribe;
+    }, [navigation, load]);
 
     const handleWithdraw = (appId) => {
         Alert.alert("Rút đơn ứng tuyển", "Bạn chắc chắn muốn rút đơn? Hành động không thể hoàn tác.", [
@@ -47,8 +58,15 @@ const MyApplications = () => {
                         await authApis(token).delete(endpoints['withdraw-application'](appId));
                         setApplications(prev => prev.filter(a => a.id !== appId));
                     } catch (e) {
-                        Alert.alert("Không thể rút đơn", e?.response?.data?.detail || "Đã xảy ra lỗi.");
-                    } finally { setWithdrawing(null); }
+                        const statusCode = e?.response?.status;
+                        if (statusCode === 204 || statusCode === 200) {
+                            setApplications(prev => prev.filter(a => a.id !== appId));
+                        } else {
+                            Alert.alert("Không thể rút đơn", e?.response?.data?.detail || "Đã xảy ra lỗi.");
+                        }
+                    } finally {
+                        setWithdrawing(null);
+                    }
                 }
             }
         ]);
@@ -89,8 +107,13 @@ const MyApplications = () => {
 
     return (
         <View style={[Styles.container, { padding: 16 }]}>
-            {loading ? (
-                <Text style={{ textAlign: 'center', marginTop: 40, color: COLORS.textLight }}>Đang tải...</Text>
+            {loading || withdrawing ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={{ color: COLORS.textLight, marginTop: 12 }}>
+                        {withdrawing ? "Đang rút đơn..." : "Đang tải..."}
+                    </Text>
+                </View>
             ) : applications.length === 0 ? (
                 <View style={{ alignItems: 'center', marginTop: 60 }}>
                     <Text style={{ fontSize: 40 }}>📭</Text>

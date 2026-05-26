@@ -1,59 +1,59 @@
-import { TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View, Image } from "react-native";
 import { Text } from "react-native-paper";
 import Styles, { COLORS } from "../styles/Styles";
 
-const statusColor = {
-    full_time: '#1565C0',
-    part_time: '#6A1B9A',
-    internship: '#E65100',
-    remote: '#2E7D32',
-};
+const JobItem = ({ item, onPress, filters }) => {
+    const companyName = item.employer?.company_name || 'Công ty';
+    const companyLogo = item.employer?.company_logo;
 
-const JobItem = ({ item, onPress }) => {
     const salary = item.salary_min && item.salary_max
         ? `${Number(item.salary_min).toLocaleString()} - ${Number(item.salary_max).toLocaleString()} VND`
         : item.salary_min
             ? `Từ ${Number(item.salary_min).toLocaleString()} VND`
             : 'Thỏa thuận';
 
-    const jobTypeLabel = {
-        full_time: 'Toàn thời gian',
-        part_time: 'Bán thời gian',
-        internship: 'Thực tập',
-        remote: 'Remote',
-    }[item.job_type] || item.job_type;
+    const hasFilter = filters && (
+        filters.salary_min || filters.salary_max ||
+        filters.location || filters.company
+    );
 
     return (
         <TouchableOpacity style={Styles.card} onPress={onPress} activeOpacity={0.85}>
-            <View style={[Styles.row, { justifyContent: 'space-between' }]}>
-                <Text style={Styles.title} numberOfLines={2} style={{ flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.text }}>
-                    {item.title}
-                </Text>
-                <View style={[Styles.badge, { backgroundColor: statusColor[item.job_type] || COLORS.primary, marginLeft: 8 }]}>
-                    <Text style={Styles.badgeText}>{jobTypeLabel}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                {companyLogo ? (
+                    <Image
+                        source={{ uri: companyLogo }}
+                        style={{ width: 44, height: 44, borderRadius: 8, backgroundColor: '#f3f4f6' }}
+                        resizeMode="contain"
+                    />
+                ) : (
+                    <View style={{ width: 44, height: 44, borderRadius: 8, backgroundColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 20 }}>🏢</Text>
+                    </View>
+                )}
+                <View style={{ flex: 1 }}>
+                    <Text numberOfLines={1} style={{ fontSize: 13, color: COLORS.primary, fontWeight: '600' }}>
+                        {companyName}
+                    </Text>
+                    <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: '700', color: COLORS.text, marginTop: 2 }}>
+                        {item.title}
+                    </Text>
+                    {hasFilter && (
+                        <View style={{ marginTop: 6, gap: 2 }}>
+                            {(filters.location || filters.salary_min || filters.salary_max) && (
+                                <Text numberOfLines={1} style={{ fontSize: 12, color: COLORS.textLight }}>
+                                    📍 {item.location || 'Không xác định'}
+                                </Text>
+                            )}
+                            {(filters.salary_min || filters.salary_max) && (
+                                <Text numberOfLines={1} style={{ fontSize: 12, color: '#16a34a', fontWeight: '600' }}>
+                                    💰 {salary}
+                                </Text>
+                            )}
+                        </View>
+                    )}
                 </View>
             </View>
-
-            <Text style={{ color: COLORS.primary, fontWeight: '600', marginTop: 4 }}>
-                🏢 {item.employer?.company?.name || item.company_name || 'Công ty'}
-            </Text>
-
-            <View style={[Styles.row, { marginTop: 6 }]}>
-                <Text style={Styles.subtitle}>📍 {item.location || 'Không xác định'}</Text>
-                <Text style={{ color: COLORS.textLight, marginLeft: 12, fontSize: 13 }}>💰 {salary}</Text>
-            </View>
-
-            <View style={[Styles.row, { marginTop: 8, flexWrap: 'wrap' }]}>
-                {item.required_skills && item.required_skills.split(',').slice(0, 3).map((skill, i) => (
-                    <View key={i} style={{ backgroundColor: COLORS.chip, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2, margin: 2 }}>
-                        <Text style={{ fontSize: 11, color: COLORS.primary }}>{skill.trim()}</Text>
-                    </View>
-                ))}
-            </View>
-
-            <Text style={{ color: COLORS.textLight, fontSize: 11, marginTop: 8 }}>
-                📅 Hạn: {item.deadline ? new Date(item.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
-            </Text>
         </TouchableOpacity>
     );
 };

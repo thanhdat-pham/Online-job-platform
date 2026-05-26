@@ -3,7 +3,7 @@ import {
     ActivityIndicator, FlatList, View, Text, ScrollView,
     TouchableOpacity, Modal, StyleSheet, Platform,
 } from "react-native";
-import { Searchbar, Chip, Button, Menu, Divider, IconButton } from "react-native-paper";
+import { Searchbar, Button, Menu, Divider, IconButton } from "react-native-paper";
 import Apis, { endpoints } from "../../configs/Apis";
 import JobItem from "../../components/JobItem";
 import Styles, { COLORS } from "../../styles/Styles";
@@ -11,14 +11,6 @@ import { useNavigation } from "@react-navigation/native";
 
 const PAGE_SIZE = 20;
 const PRIMARY_COLOR = COLORS.primary ?? "#1e3a8a";
-
-const JOB_TYPES = [
-    { key: null, label: "Tất cả" },
-    { key: "full_time", label: "Toàn thời gian" },
-    { key: "part_time", label: "Bán thời gian" },
-    { key: "internship", label: "Thực tập" },
-    { key: "remote", label: "Remote" },
-];
 
 const SORT_OPTIONS = [
     { key: null, label: "Mặc định" },
@@ -33,8 +25,16 @@ const COMPARE_CRITERIA = [
     { key: "experience", label: "Kinh nghiệm" },
     { key: "benefits", label: "Phúc lợi" },
     { key: "location", label: "Địa điểm" },
-    { key: "job_type", label: "Loại công việc" },
+
     { key: "category", label: "Ngành nghề" },
+];
+
+const EXPERIENCE_OPTIONS = [
+    { key: "0", label: "Tất cả kinh nghiệm" },
+    { key: "no_exp", label: "Chưa có kinh nghiệm" },
+    { key: "1_year", label: "1 năm" },
+    { key: "2_years", label: "2 năm" },
+    { key: "senior", label: "Trên 5 năm" },
 ];
 
 const formatSalary = (min, max) => {
@@ -44,8 +44,6 @@ const formatSalary = (min, max) => {
     if (min) return `Từ ${fmt(min)}`;
     return `Đến ${fmt(max)}`;
 };
-
-const getJobTypeLabel = (key) => JOB_TYPES.find(t => t.key === key)?.label ?? key;
 
 const FilterModal = ({ visible, onClose, filters, setFilter }) => {
     const [locationText, setLocationText] = useState(filters.location ?? "");
@@ -96,9 +94,7 @@ const FilterModal = ({ visible, onClose, filters, setFilter }) => {
                             onChangeText={setLocationText}
                             style={fm.searchbar}
                             inputStyle={fm.inputStyle}
-                            icon="map-marker-outline"
                         />
-
                         <Text style={fm.sectionTitle}>Tên công ty</Text>
                         <Searchbar
                             placeholder="Nhập tên doanh nghiệp tuyển dụng..."
@@ -106,26 +102,29 @@ const FilterModal = ({ visible, onClose, filters, setFilter }) => {
                             onChangeText={setCompanyText}
                             style={fm.searchbar}
                             inputStyle={fm.inputStyle}
-                            icon="office-building-outline"
                         />
-
                         <Text style={fm.sectionTitle}>Mức lương mong muốn (Triệu VNĐ)</Text>
                         <View style={fm.salaryWrapper}>
-                            <Searchbar placeholder="Từ" value={salaryMin} onChangeText={setSalaryMin} style={fm.salaryInput} inputStyle={fm.inputStyle} keyboardType="numeric" icon="minus" />
+                            <Searchbar placeholder="Từ" value={salaryMin} onChangeText={setSalaryMin} style={fm.salaryInput} inputStyle={fm.inputStyle} keyboardType="numeric" />
                             <Text style={fm.salaryDash}>–</Text>
-                            <Searchbar placeholder="Đến" value={salaryMax} onChangeText={setSalaryMax} style={fm.salaryInput} inputStyle={fm.inputStyle} keyboardType="numeric" icon="minus" />
+                            <Searchbar placeholder="Đến" value={salaryMax} onChangeText={setSalaryMax} style={fm.salaryInput} inputStyle={fm.inputStyle} keyboardType="numeric" />
                         </View>
                     </ScrollView>
                     <View style={fm.footer}>
                         <Button mode="outlined" onPress={handleReset} style={fm.footerBtn} labelStyle={{ color: "#666" }}>Xóa lọc</Button>
-                        <Button mode="contained" onPress={handleApply} style={[fm.footerBtn, { backgroundColor: PRIMARY_COLOR }]}>Áp dụng</Button>
+                        <Button mode="contained" onPress={handleApply} style={[fm.footerBtn, { backgroundColor: PRIMARY_COLOR }]}>Lọc</Button>
                     </View>
                 </View>
             </View>
         </Modal>
     );
 };
-
+const EXPERIENCE_LABEL = {
+    "no_exp": "Chưa có kinh nghiệm",
+    "1_year": "1 năm kinh nghiệm",
+    "2_years": "2 năm kinh nghiệm",
+    "senior": "Trên 5 năm kinh nghiệm",
+};
 const CompareModal = ({ visible, jobs, onClose, onRemove }) => {
     if (!jobs.length) return null;
     return (
@@ -162,10 +161,10 @@ const CompareModal = ({ visible, jobs, onClose, onRemove }) => {
                                         <View key={job.id} style={cmp.cell}>
                                             <Text style={cmp.cellValue}>
                                                 {cr.key === "salary" && formatSalary(job.salary_min, job.salary_max)}
-                                                {cr.key === "experience" && (job.experience_required ?? "Không yêu cầu")}
+                                                {cr.key === "experience" && (EXPERIENCE_LABEL[job.experience_level] ?? "Không yêu cầu")}
                                                 {cr.key === "benefits" && (job.benefits ?? "—")}
                                                 {cr.key === "location" && (job.location ?? "—")}
-                                                {cr.key === "job_type" && getJobTypeLabel(job.job_type)}
+                                                {cr.key === "job_type" && (job.job_type ?? "—")}
                                                 {cr.key === "category" && (job.category_name ?? job.category?.name ?? "—")}
                                             </Text>
                                         </View>
@@ -202,33 +201,30 @@ const CandidateHome = () => {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [totalCount, setTotalCount] = useState(0);
-
     const [q, setQ] = useState("");
     const [sortVisible, setSortVisible] = useState(false);
+    const [categoryVisible, setCategoryVisible] = useState(false);
     const [filterModalVisible, setFilterModalVisible] = useState(false);
-
     const [filters, _setFilters] = useState({
-        jobType: null,
         category: null,
         sort: null,
         location: null,
         company: null,
         salary_min: null,
         salary_max: null,
+        experience: "0",
     });
     const setFilter = useCallback((key, val) => _setFilters(prev => ({ ...prev, [key]: val })), []);
-
     const [page, setPage] = useState(1);
     const totalPages = totalCount ? Math.ceil(totalCount / PAGE_SIZE) : null;
-
     const [compareList, setCompareList] = useState([]);
     const [compareVisible, setCompareVisible] = useState(false);
 
     useEffect(() => {
-        Apis.get("/jobs/categories/").then(res => {
+        Apis.get(endpoints["job-categories"]).then(res => {
             const rawData = res.data.results ?? res.data;
             setCategories([{ id: null, name: "Tất cả ngành nghề" }, ...rawData]);
-        }).catch(err => console.error("Lỗi tải ngành nghề:", err));
+        }).catch(err => console.error(err));
     }, []);
 
     useEffect(() => {
@@ -240,20 +236,17 @@ const CandidateHome = () => {
             try {
                 setLoading(true);
                 let url = `${endpoints["jobs"]}?page=${page}&page_size=${PAGE_SIZE}`;
-
                 if (q) url += `&q=${encodeURIComponent(q)}`;
-                if (filters.jobType) url += `&job_type=${filters.jobType}`;
-                if (filters.category) url += `&category_id=${filters.category}`;
+                if (filters.category) url += `&category=${filters.category}`;
                 if (filters.sort) url += `&ordering=${filters.sort}`;
                 if (filters.location) url += `&location=${encodeURIComponent(filters.location)}`;
                 if (filters.company) url += `&company_name=${encodeURIComponent(filters.company)}`;
                 if (filters.salary_min) url += `&salary_min=${filters.salary_min}`;
                 if (filters.salary_max) url += `&salary_max=${filters.salary_max}`;
-
+                if (filters.experience && filters.experience !== "0") url += `&experience_level=${filters.experience}`;
                 const res = await Apis.get(url);
                 const results = res.data.results ?? res.data;
                 setJobs(results ?? []);
-
                 if (res.data.count !== undefined) {
                     setTotalCount(res.data.count);
                 } else if (Array.isArray(res.data)) {
@@ -262,14 +255,12 @@ const CandidateHome = () => {
                     setTotalCount(0);
                 }
             } catch (ex) {
-                console.error("Lỗi API kết nối danh sách công việc:", ex);
                 setJobs([]);
                 setTotalCount(0);
             } finally {
                 setLoading(false);
             }
         };
-
         const timer = setTimeout(fetchJobsData, 350);
         return () => clearTimeout(timer);
     }, [q, filters, page]);
@@ -286,20 +277,25 @@ const CandidateHome = () => {
 
     const renderJob = useCallback(({ item }) => (
         <View style={s.jobWrapper}>
-            <JobItem item={item} onPress={() => nav.navigate("job-detail", { jobId: item.id })} />
+            <JobItem
+                item={item}
+                onPress={() => nav.navigate("job-detail", { jobId: item.id })}
+                filters={filters}
+            />
             <TouchableOpacity
                 style={[s.compareToggle, isInCompare(item.id) && s.compareActive]}
                 onPress={() => toggleCompare(item)}
                 activeOpacity={0.75}
             >
                 <Text style={[s.compareToggleTxt, isInCompare(item.id) && s.compareActiveTxt]}>
-                    {isInCompare(item.id) ? "✓ Đang chọn" : "+ So sánh"}
+                    {isInCompare(item.id) ? "Đang chọn" : "So sánh"}
                 </Text>
             </TouchableOpacity>
         </View>
-    ), [isInCompare, toggleCompare, nav]);
+    ), [isInCompare, toggleCompare, nav, filters]);
 
     const currentSort = SORT_OPTIONS.find(s => s.key === filters.sort) ?? SORT_OPTIONS[0];
+    const currentCategory = categories.find(c => c.id === filters.category) ?? categories[0];
     const hasAdvancedFilter = filters.location || filters.company || filters.salary_min || filters.salary_max;
 
     return (
@@ -316,7 +312,6 @@ const CandidateHome = () => {
                     style={[s.filterActionBtn, hasAdvancedFilter && { backgroundColor: "#e0f2fe", borderColor: PRIMARY_COLOR }]}
                     onPress={() => setFilterModalVisible(true)}
                 >
-                    <Text style={[s.filterActionBtnIcon, hasAdvancedFilter && { color: PRIMARY_COLOR }]}>🔍</Text>
                     <Text style={[s.filterActionBtnText, hasAdvancedFilter && { color: PRIMARY_COLOR }]}>Bộ lọc nâng cao</Text>
                 </TouchableOpacity>
             </View>
@@ -327,7 +322,7 @@ const CandidateHome = () => {
                     onDismiss={() => setSortVisible(false)}
                     anchor={
                         <TouchableOpacity style={s.sortBtn} onPress={() => setSortVisible(true)}>
-                            <Text style={s.sortLabel}>⇅ {currentSort.label}</Text>
+                            <Text style={s.sortLabel}>{currentSort.label}</Text>
                         </TouchableOpacity>
                     }
                 >
@@ -341,35 +336,39 @@ const CandidateHome = () => {
                     ))}
                 </Menu>
 
-                {categories.length > 0 && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                        {categories.map(cat => (
-                            <Chip
-                                key={String(cat.id)}
-                                selected={filters.category === cat.id}
-                                onPress={() => setFilter("category", cat.id)}
-                                style={[s.subChip, filters.category === cat.id && s.chipActive]}
-                                textStyle={filters.category === cat.id ? s.chipActiveTxt : s.chipTxt}
-                            >
-                                {cat.name}
-                            </Chip>
-                        ))}
-                    </ScrollView>
-                )}
+                <Menu
+                    visible={categoryVisible}
+                    onDismiss={() => setCategoryVisible(false)}
+                    anchor={
+                        <TouchableOpacity style={s.sortBtn} onPress={() => setCategoryVisible(true)}>
+                            <Text style={s.sortLabel}>{currentCategory?.name ?? "Tất cả ngành nghề"}</Text>
+                        </TouchableOpacity>
+                    }
+                >
+                    {categories.map(cat => (
+                        <Menu.Item
+                            key={String(cat.id)}
+                            onPress={() => { setFilter("category", cat.id); setCategoryVisible(false); }}
+                            title={cat.name}
+                            titleStyle={filters.category === cat.id ? { fontWeight: "700", color: PRIMARY_COLOR } : {}}
+                        />
+                    ))}
+                </Menu>
             </View>
 
             <View style={{ marginBottom: 4 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
-                    {JOB_TYPES.map(t => (
-                        <Chip
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.rectTagRow}>
+                    {EXPERIENCE_OPTIONS.map(t => (
+                        <TouchableOpacity
                             key={String(t.key)}
-                            selected={filters.jobType === t.key}
-                            onPress={() => setFilter("jobType", t.key)}
-                            style={[s.mainChip, filters.jobType === t.key && s.chipActive]}
-                            textStyle={filters.jobType === t.key ? s.chipActiveTxt : s.chipTxt}
+                            onPress={() => setFilter("experience", t.key)}
+                            style={[s.rectTag, filters.experience === t.key && s.rectTagActive]}
+                            activeOpacity={0.8}
                         >
-                            {t.label}
-                        </Chip>
+                            <Text style={[s.rectTagText, filters.experience === t.key && s.rectTagTextActive]}>
+                                {t.label}
+                            </Text>
+                        </TouchableOpacity>
                     ))}
                 </ScrollView>
             </View>
@@ -384,7 +383,7 @@ const CandidateHome = () => {
 
             {compareList.length > 0 && (
                 <View style={s.stickyCompareBar}>
-                    <Text style={s.stickyCompareTxt}>⚖️ Đã chọn {compareList.length}/4 tin</Text>
+                    <Text style={s.stickyCompareTxt}>Đã chọn {compareList.length}/4 tin</Text>
                     <View style={{ flexDirection: "row", gap: 8 }}>
                         <Button mode="contained" dense onPress={() => setCompareVisible(true)} style={{ backgroundColor: PRIMARY_COLOR }} labelStyle={{ fontSize: 11 }}>So Sánh</Button>
                         <Button mode="text" dense onPress={() => setCompareList([])} labelStyle={{ color: "#ef4444", fontSize: 11 }}>Xóa</Button>
@@ -426,21 +425,19 @@ const s = StyleSheet.create({
     topSearchRow: { flexDirection: "row", paddingHorizontal: 12, paddingTop: 12, gap: 8, alignItems: "center" },
     searchBar: { flex: 1, height: 46, borderRadius: 12, backgroundColor: "#fff", elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
     filterActionBtn: { flexDirection: "row", height: 46, backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 12, justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#e5e7eb", gap: 6 },
-    filterActionBtnIcon: { fontSize: 13, color: "#4b5563" },
     filterActionBtnText: { fontSize: 12, color: "#4b5563", fontWeight: "600" },
     utilityBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
     sortBtn: { backgroundColor: "#fff", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb" },
     sortLabel: { fontSize: 12, fontWeight: "600", color: "#4b5563" },
-    chipRow: { paddingHorizontal: 12, paddingBottom: 8, gap: 6 },
-    mainChip: { backgroundColor: "#e5e7eb", borderRadius: 10, height: 34 },
-    subChip: { backgroundColor: "#fff", borderRadius: 8, height: 30, borderWidth: 1, borderColor: "#e5e7eb" },
-    chipActive: { backgroundColor: PRIMARY_COLOR },
-    chipTxt: { fontSize: 12, color: "#374151" },
-    chipActiveTxt: { color: "#fff", fontWeight: "700" },
+    rectTagRow: { paddingHorizontal: 12, paddingVertical: 6, gap: 8 },
+    rectTag: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: "#e5e7eb", justifyContent: "center", alignItems: "center" },
+    rectTagActive: { backgroundColor: PRIMARY_COLOR },
+    rectTagText: { fontSize: 12, color: "#374151", fontWeight: "500" },
+    rectTagTextActive: { color: "#fff", fontWeight: "700" },
     metaRow: { paddingHorizontal: 14, marginBottom: 6 },
     resultCount: { fontSize: 13, color: "#6b7280", fontWeight: "500" },
     jobWrapper: { backgroundColor: "#fff", borderRadius: 14, marginBottom: 12, elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, overflow: "hidden" },
-    compareToggle: { position: "absolute", bottom: 12, right: 12, backgroundColor: "#f3f4f6", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: "#d1d5db" },
+    compareToggle: { alignSelf: "flex-end", marginTop: 6, marginRight: 12, marginBottom: 10, backgroundColor: "#f3f4f6", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: "#d1d5db" },
     compareActive: { backgroundColor: "#10b981", borderColor: "#10b981" },
     compareToggleTxt: { fontSize: 11, color: "#4b5563", fontWeight: "600" },
     compareActiveTxt: { color: "#fff", fontWeight: "700" },
@@ -452,7 +449,7 @@ const s = StyleSheet.create({
 
 const fm = StyleSheet.create({
     backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-    container: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "80%", paddingBottom: Platform.OS === "ios" ? 34 : 16 },
+    container: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "85%", paddingBottom: Platform.OS === "ios" ? 34 : 16 },
     header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: "#f3f4f6" },
     headerTitle: { fontSize: 16, fontWeight: "700", color: "#1f2937" },
     body: { padding: 16 },

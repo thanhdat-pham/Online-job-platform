@@ -4,19 +4,24 @@ import { Button } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
 import Styles, { COLORS } from "../../styles/Styles";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 const ManageJobs = () => {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const nav = useNavigation();
+    const route = useRoute();
 
     const load = async () => {
         try {
             setLoading(true);
             const token = await AsyncStorage.getItem('token');
             const res = await authApis(token).get(endpoints['employer-jobs']);
-            setJobs(res.data.results ?? res.data);
+            const data = res.data.results ?? res.data;
+            setJobs(data);
+            if (route.params?.openApplications && data.length > 0) {
+                nav.navigate('view-applications', { jobId: data[0].id, jobTitle: data[0].title });
+            }
         } catch (ex) { console.error(ex); }
         finally { setLoading(false); }
     };
@@ -55,12 +60,7 @@ const ManageJobs = () => {
                         📍 {item.location} · 📅 {item.deadline ? new Date(item.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
                     </Text>
                     <View style={[Styles.row, { marginTop: 10, justifyContent: 'flex-end', flexWrap: 'wrap', gap: 6 }]}>
-                        <Button
-                            compact mode="outlined"
-                            onPress={() => nav.navigate('view-applications', { jobId: item.id, jobTitle: item.title })}
-                        >
-                            Xem hồ sơ
-                        </Button>
+
                         <Button
                             compact mode="contained"
                             buttonColor={COLORS.secondary}

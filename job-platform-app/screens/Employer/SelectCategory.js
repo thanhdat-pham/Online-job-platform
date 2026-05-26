@@ -2,15 +2,14 @@ import { useEffect, useState, useCallback } from "react";
 import { FlatList, View, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Text, Searchbar } from "react-native-paper";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import axios from "axios";
+import Apis, { endpoints } from "../../configs/Apis";
 import { COLORS } from "../../styles/Styles";
 
 const SelectCategory = () => {
     const nav = useNavigation();
     const route = useRoute();
 
-    // Caller truyền vào: onSelect (callback key để goBack với params)
-    const returnKey = route.params?.returnKey || "selectedCategory"; // key dùng trong route.params khi back
+    const returnKey = route.params?.returnKey || "selectedCategory";
 
     const [allCategories, setAllCategories] = useState([]);
     const [filtered, setFiltered] = useState([]);
@@ -19,11 +18,11 @@ const SelectCategory = () => {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        axios
-            .get("http://10.0.2.2:8000/categories/")
+        Apis.get(endpoints["job-categories"])
             .then((res) => {
-                setAllCategories(res.data);
-                setFiltered(res.data);
+                const data = res.data.results ?? res.data;
+                setAllCategories(data);
+                setFiltered(data);
             })
             .catch(() => setError("Không thể tải danh sách ngành nghề."))
             .finally(() => setLoading(false));
@@ -47,7 +46,6 @@ const SelectCategory = () => {
     );
 
     const handleSelect = (category) => {
-        // Trả về màn hình trước thông qua route.params
         nav.navigate(route.params?.fromScreen, {
             [returnKey]: { id: String(category.id), name: category.name },
         });

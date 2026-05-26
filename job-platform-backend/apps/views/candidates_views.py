@@ -31,6 +31,14 @@ class CandidateViewSet(viewsets.ViewSet):
             return Response(ser.data)
         return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['get'], url_path='profile')
+    def view_profile(self, request, pk=None):
+        try:
+            profile = CandidateProfile.objects.select_related('user').get(user__id=pk)
+        except CandidateProfile.DoesNotExist:
+            return Response({'detail': 'Không tìm thấy hồ sơ.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CandidateProfileSerializer(profile).data)
+
     @action(detail=False, methods=['get'], url_path='me/applications')
     def my_applications(self, request):
         try:
@@ -100,4 +108,4 @@ class ApplicationViewSet(viewsets.ViewSet):
         if app.status != 'pending':
             return Response({'detail': 'Chỉ rút được đơn khi trạng thái là "Chờ xử lý".'}, status=status.HTTP_400_BAD_REQUEST)
         app.delete()
-        return Response({'message': 'Đã rút đơn thành công.'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Đã rút đơn thành công.'}, status=status.HTTP_200_OK)
