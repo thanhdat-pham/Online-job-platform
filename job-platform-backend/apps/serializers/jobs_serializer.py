@@ -6,9 +6,15 @@ class JobEmployerSerializer(serializers.ModelSerializer):
 
     company_name = serializers.ReadOnlyField(source='company.name')
     company_address = serializers.ReadOnlyField(source='company.address')
+    company_logo = serializers.SerializerMethodField()
     class Meta:
         model = Employer
-        fields = ['company_name', 'company_address' ]
+        fields = ['company_name', 'company_address', 'company_logo' ]
+
+    def get_company_logo(self, obj):  # ← THÊM method này
+        if obj.company and obj.company.logo:
+            return obj.company.logo.url
+        return None
 
 class JobCategorySerializer(serializers.ModelSerializer):
     class Meta:

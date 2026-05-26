@@ -7,7 +7,9 @@ import SelectCategory from "./screens/Employer/SelectCategory";
 import { MyUserContext } from "./configs/Contexts";
 import { MyUserReducer } from "./reducers/reducers";
 import { COLORS } from "./styles/Styles";
-import { registerTranslation } from 'react-native-paper-dates'
+import { registerTranslation } from 'react-native-paper-dates';
+import CandidateProfileView from "./screens/Employer/CandidateProfileView";
+
 registerTranslation('vi', {
   save: 'Lưu',
   selectSingle: 'Chọn ngày',
@@ -37,7 +39,6 @@ import ViewApplications from "./screens/Employer/ViewApplications";
 import EmployerProfile from "./screens/Employer/EmployerProfile";
 import Notifications from "./screens/Notifications/Notifications";
 
-
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -46,7 +47,6 @@ const HomeStack = () => (
     <Stack.Screen name="home-list" component={Home} options={{ title: 'Việc Làm' }} />
     <Stack.Screen name="job-detail" component={JobDetail} options={{ title: 'Chi tiết công việc' }} />
     <Stack.Screen name="apply-job" component={ApplyJob} options={{ title: 'Nộp hồ sơ' }} />
-    {/* Candidate cũng dùng SelectCategory để lọc tìm kiếm */}
     <Stack.Screen name="select-category" component={SelectCategory} options={{ title: 'Chọn ngành nghề' }} />
   </Stack.Navigator>
 );
@@ -57,7 +57,6 @@ const EmployerStack = () => (
     <Stack.Screen name="post-job" component={PostJob} options={{ title: 'Đăng tin tuyển dụng' }} />
     <Stack.Screen name="manage-jobs" component={ManageJobs} options={{ title: 'Quản lý tin đăng' }} />
     <Stack.Screen name="view-applications" component={ViewApplications} options={{ title: 'Hồ sơ ứng tuyển' }} />
-    {/* 👇 Thêm route SelectCategory vào EmployerStack */}
     <Stack.Screen name="select-category" component={SelectCategory} options={{ title: 'Chọn ngành nghề' }} />
   </Stack.Navigator>
 );
@@ -91,10 +90,7 @@ const TabNavigator = () => {
         <Tab.Screen
           name="notifications"
           component={Notifications}
-          options={{
-            title: 'Thông báo',
-            tabBarIcon: ({ color }) => <Icon source="bell" size={26} color={color} />
-          }}
+          options={{ title: 'Thông báo', tabBarIcon: ({ color }) => <Icon source="bell" size={26} color={color} /> }}
         />
       )}
       {user === null ? (
@@ -134,7 +130,6 @@ const TabNavigator = () => {
   );
 };
 
-
 const RootStack = createNativeStackNavigator();
 
 const App = () => {
@@ -145,32 +140,21 @@ const App = () => {
       <PaperProvider>
         <NavigationContainer>
           <RootStack.Navigator>
-
+            <RootStack.Screen name="main-tabs" component={TabNavigator} options={{ headerShown: false }} />
             <RootStack.Screen
-              name="main-tabs"
-              component={TabNavigator}
-              options={{ headerShown: false }}
+              name="candidate-profile-view"
+              component={CandidateProfileView}
+              options={{ title: 'Hồ sơ ứng viên', headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' } }}
             />
-
             <RootStack.Screen
               name="CandidateProfile"
               component={CandidateProfile}
-              options={{
-                title: 'Hồ sơ ứng viên',
-                headerStyle: { backgroundColor: COLORS.primary },
-                headerTintColor: '#fff',
-                headerTitleStyle: { fontWeight: '700' }
-              }}
+              options={{ title: 'Hồ sơ ứng viên', headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' } }}
             />
             <RootStack.Screen
               name="EmployerProfile"
               component={EmployerProfile}
-              options={{
-                title: 'Hồ sơ nhà tuyển dụng',
-                headerStyle: { backgroundColor: COLORS.primary },
-                headerTintColor: '#fff',
-                headerTitleStyle: { fontWeight: '700' }
-              }}
+              options={{ title: 'Hồ sơ nhà tuyển dụng', headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' } }}
             />
           </RootStack.Navigator>
         </NavigationContainer>

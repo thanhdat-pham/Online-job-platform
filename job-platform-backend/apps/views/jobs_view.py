@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Q
+
 
 from apps.models.jobs import Job, JobCategory
 from apps.models.candidates import CandidateProfile, Application
@@ -17,13 +17,17 @@ class JobCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 class JobViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = JobSerializer
     pagination_class = JobPaginator
-
+    permission_classes = [permissions.AllowAny]
     def get_queryset(self):
         qs = Job.objects.select_related('employer__company', 'category').order_by('-created_at')
         q          = self.request.query_params.get('q')
         category   = self.request.query_params.get('category')
         location   = self.request.query_params.get('location')
-        experience = self.request.query_params.get('experience')
+        experience = self.request.query_params.get('experience_level')
+        salary_min = self.request.query_params.get('salary_min')
+        salary_max = self.request.query_params.get('salary_max')
+        company = self.request.query_params.get('company_name')
+        ordering = self.request.query_params.get('ordering')
         if q:
             qs = qs.filter(Q(title__icontains=q) | Q(description__icontains=q) | Q(location__icontains=q))
         if category:
@@ -32,6 +36,22 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(location__icontains=location)
         if experience:
             qs = qs.filter(experience_level=experience)
+        if salary_min:
+            qs = qs.filter(salary_min__gte=salary_min)
+        if salary_max:
+            qs = qs.filter(salary_max__lte=salary_max)
+        if company:
+            qs = qs.filter(employer__company__name__icontains=company)
+
+        ordering_map = {
+            'salary_desc': '-salary_max',
+            'salary_asc': 'salary_min',
+            'date_desc': '-created_at',
+            'date_asc': 'created_at',
+        }
+        if ordering and ordering in ordering_map:
+            qs = qs.order_by(ordering_map[ordering])
+
         return qs
 
     def retrieve(self, request, *args, **kwargs):
