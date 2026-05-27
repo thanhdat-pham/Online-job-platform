@@ -3,3 +3,4 @@ from .notification_view import NotificationViewSet
 from .jobs_view import JobViewSet, JobCategoryViewSet
 from .employers_view import EmployerProfileViewSet, EmployerJobViewSet
 from .candidates_views import CandidateViewSet, ApplicationViewSet
+from .dashboard_view import dashboard_view
