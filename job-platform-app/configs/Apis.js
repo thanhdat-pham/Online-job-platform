@@ -28,7 +28,7 @@ export const endpoints = {
     'employer-job-applications': (id) => `/employer/jobs/${id}/applications/`,
     'review-application': (id) => `/employer/jobs/${id}/review-application/`,
     'employer-stats': '/employer/jobs/stats/',
-
+    'save-job': (jobId) => `/jobs/${jobId}/save/`,
     'employer-profile': '/employer-profile/',
     'notifications': '/notifications/',
     'notification-read': (id) => `/notifications/${id}/read/`,
