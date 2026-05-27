@@ -58,6 +58,14 @@ const EmployerDashboard = () => {
             <MenuItem icon="👥" title="Xem hồ sơ ứng tuyển" subtitle="Duyệt và xem xét hồ sơ ứng viên" color="#E8F5E9"
                 disabled={!user?.is_verified}
                 onPress={() => requireVerified(() => nav.navigate('view-applications'))} />
+            <MenuItem
+                icon="📊"
+                title="Thống kê tuyển dụng"
+                subtitle="Xem báo cáo hiệu quả tuyển dụng"
+                color="#FFF3E0"
+                disabled={!user?.is_verified}
+                onPress={() => requireVerified(() => nav.navigate('employer-stats'))}
+            />
         </ScrollView>
     );
 };

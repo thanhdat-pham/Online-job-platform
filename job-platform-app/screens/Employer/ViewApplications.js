@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { FlatList, View, Text, ActivityIndicator, Alert, TouchableOpacity, ScrollView } from "react-native";
+import { useEffect, useState, useMemo } from "react";
+import { FlatList, View, Text, ActivityIndicator, Alert, TouchableOpacity, Modal } from "react-native";
 import { Button, Menu, TextInput } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
@@ -69,9 +69,7 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
         <View style={Styles.card}>
             <View style={[Styles.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: '700', fontSize: 15, color: COLORS.primary }}>
-                        {candidateName}
-                    </Text>
+                    <Text style={{ fontWeight: '700', fontSize: 15, color: COLORS.primary }}>{candidateName}</Text>
                     <Text style={{ color: COLORS.textLight, fontSize: 12, marginTop: 2 }}>
                         Nộp lúc: {new Date(item.applied_at).toLocaleString('vi-VN')}
                     </Text>
@@ -82,9 +80,7 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
             </View>
 
             {item.cover_letter ? (
-                <Text style={{ color: COLORS.text, marginTop: 8, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>
-                    📄 {item.cover_letter}
-                </Text>
+                <Text style={{ color: COLORS.text, marginTop: 8, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>📄 {item.cover_letter}</Text>
             ) : null}
 
             {item.employers_note ? (
@@ -94,20 +90,12 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
             ) : null}
 
             <View style={[Styles.row, { marginTop: 10, flexWrap: 'wrap', gap: 6 }]}>
-                <Button compact mode="outlined" icon="account" onPress={() => onViewProfile(item.candidate)}>
-                    Xem hồ sơ
-                </Button>
-                <Button compact mode="outlined" icon="note-edit" onPress={() => setNoteVisible(!noteVisible)}>
-                    Ghi chú
-                </Button>
+                <Button compact mode="outlined" icon="account" onPress={() => onViewProfile(item.candidate)}>Xem hồ sơ</Button>
+                <Button compact mode="outlined" icon="note-edit" onPress={() => setNoteVisible(!noteVisible)}>Ghi chú</Button>
                 <Menu
                     visible={menuVisible}
                     onDismiss={() => setMenuVisible(false)}
-                    anchor={
-                        <Button compact mode="outlined" onPress={() => setMenuVisible(true)}>
-                            Trạng thái ▾
-                        </Button>
-                    }
+                    anchor={<Button compact mode="outlined" onPress={() => setMenuVisible(true)}>Trạng thái ▾</Button>}
                 >
                     {STATUS_OPTIONS.map(s => (
                         <Menu.Item key={s.value} onPress={() => updateStatus(s.value)} title={s.label} />
@@ -125,8 +113,7 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
                         numberOfLines={3}
                         style={Styles.input}
                     />
-                    <Button mode="contained" loading={savingNote} onPress={saveNote}
-                        style={[Styles.btn, { backgroundColor: COLORS.primary }]}>
+                    <Button mode="contained" loading={savingNote} onPress={saveNote} style={[Styles.btn, { backgroundColor: COLORS.primary }]}>
                         Lưu ghi chú
                     </Button>
                 </View>
@@ -135,45 +122,6 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
     );
 };
 
-const JobSelector = ({ jobs, selectedJob, onSelect }) => (
-    <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-            gap: 8,
-        }}
-    >
-        {jobs.map(job => (
-            <TouchableOpacity
-                key={job.id}
-                onPress={() => onSelect(job)}
-                activeOpacity={0.75}
-                style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                    alignSelf: 'flex-start',
-                    backgroundColor: selectedJob?.id === job.id ? COLORS.primary : '#f0f0f0',
-                    borderWidth: selectedJob?.id === job.id ? 0 : 1,
-                    borderColor: '#ddd',
-                }}
-            >
-                <Text style={{
-                    fontSize: 13,
-                    fontWeight: '600',
-                    color: selectedJob?.id === job.id ? '#fff' : '#333',
-                }}>
-                    {job.title}
-                </Text>
-            </TouchableOpacity>
-        ))}
-    </ScrollView>
-);
-
 const ViewApplications = () => {
     const nav = useNavigation();
     const [jobs, setJobs] = useState([]);
@@ -181,6 +129,14 @@ const ViewApplications = () => {
     const [apps, setApps] = useState([]);
     const [loadingJobs, setLoadingJobs] = useState(true);
     const [loadingApps, setLoadingApps] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredJobs = useMemo(() => {
+        return jobs.filter(job =>
+            job.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [jobs, searchQuery]);
 
     const loadJobs = async () => {
         try {
@@ -223,7 +179,48 @@ const ViewApplications = () => {
 
     return (
         <View style={Styles.container}>
-            <JobSelector jobs={jobs} selectedJob={selectedJob} onSelect={setSelectedJob} />
+            <View style={{ padding: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#eee' }}>
+                <Text style={{ fontSize: 12, color: COLORS.textLight, marginBottom: 5 }}>Tin tuyển dụng:</Text>
+                <TouchableOpacity
+                    onPress={() => setModalVisible(true)}
+                    style={{ padding: 12, backgroundColor: '#f0f0f0', borderRadius: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                    <Text style={{ flex: 1 }} numberOfLines={1}>{selectedJob?.title || "Chọn tin..."}</Text>
+                    <Text>▼</Text>
+                </TouchableOpacity>
+            </View>
+
+            <Modal visible={modalVisible} animationType="slide" transparent={false}>
+                <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 20 }}>
+                    <Button icon="close" onPress={() => setModalVisible(false)} style={{ marginBottom: 10 }}>Đóng danh sách</Button>
+                    <TextInput
+                        label="Tìm kiếm tin..."
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        mode="outlined"
+                        style={{ marginBottom: 10, backgroundColor: '#fff' }}
+                    />
+                    <FlatList
+                        data={filteredJobs}
+                        keyExtractor={item => String(item.id)}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={{ padding: 20, borderBottomWidth: 1, borderColor: '#eee' }}
+                                onPress={() => {
+                                    setSelectedJob(item);
+                                    setModalVisible(false);
+                                    setSearchQuery('');
+                                }}
+                            >
+                                <Text style={{ fontWeight: selectedJob?.id === item.id ? 'bold' : 'normal', color: selectedJob?.id === item.id ? COLORS.primary : '#000' }}>
+                                    {item.title}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
+            </Modal>
+
             {loadingApps
                 ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 30 }} />
                 : <FlatList
@@ -235,7 +232,7 @@ const ViewApplications = () => {
                         </Text>
                     }
                     ListEmptyComponent={<Text style={Styles.emptyText}>Chưa có hồ sơ nào</Text>}
-                    contentContainerStyle={{ paddingBottom: 20 }}
+                    contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 10 }}
                     renderItem={({ item }) => (
                         <AppCard
                             item={item}

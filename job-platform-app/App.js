@@ -10,6 +10,7 @@ import { COLORS } from "./styles/Styles";
 import { registerTranslation } from 'react-native-paper-dates';
 import CandidateProfileView from "./screens/Employer/CandidateProfileView";
 import SavedJobs from "./screens/Jobs/SaveJobs";
+import EmployerStats from "./screens/Employer/EmployerStats";
 registerTranslation('vi', {
   save: 'Lưu',
   selectSingle: 'Chọn ngày',
@@ -58,6 +59,7 @@ const EmployerStack = () => (
     <Stack.Screen name="post-job" component={PostJob} options={{ title: 'Đăng tin tuyển dụng' }} />
     <Stack.Screen name="manage-jobs" component={ManageJobs} options={{ title: 'Quản lý tin đăng' }} />
     <Stack.Screen name="view-applications" component={ViewApplications} options={{ title: 'Hồ sơ ứng tuyển' }} />
+    <Stack.Screen name="employer-stats" component={EmployerStats} options={{ title: 'Thống kê tuyển dụng' }} />
     <Stack.Screen name="select-category" component={SelectCategory} options={{ title: 'Chọn ngành nghề' }} />
   </Stack.Navigator>
 );
@@ -112,6 +114,7 @@ const TabNavigator = () => {
             component={Profile}
             options={{ title: 'Tài khoản', tabBarIcon: ({ color }) => <Icon source="account-circle" size={26} color={color} />, headerShown: true, headerTitle: 'Hồ sơ', headerStyle: { backgroundColor: COLORS.primary }, headerTintColor: '#fff' }}
           />
+
         </>
       ) : (
         <>

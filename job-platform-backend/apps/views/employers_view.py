@@ -66,7 +66,7 @@ class EmployerProfileViewSet(viewsets.ViewSet):
         })
 
 
-    @action(detail=False, methods=['get', 'patch'], url_path='')
+    @action(detail=False, methods=['get', 'patch', 'put'], url_path='profile')
     def profile(self, request):
         try:
             employer = request.user.employer_profile
