@@ -31,12 +31,18 @@ class JobSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-
+    is_saved = serializers.SerializerMethodField()
     class Meta:
         model = Job
         fields = [
             'id', 'title', 'description', 'requirements', 'benefits', 
             'salary_min', 'salary_max', 'location', 'experience_level',
-            'views_count', 'deadline', 'created_at', 'employer', 'category', 'category_id'
+            'views_count', 'deadline', 'created_at', 'employer', 'category', 'category_id','is_saved'
         ]
+
+    def get_is_saved(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and hasattr(request.user, 'candidate_profile'):
+            return obj.saved_by_candidates.filter(candidate=request.user.candidate_profile).exists()
+        return False
 

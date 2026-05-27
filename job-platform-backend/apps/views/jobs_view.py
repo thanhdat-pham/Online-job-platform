@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from django.db.models import Q
 from apps.models.jobs import Job, JobCategory
-from apps.models.candidates import CandidateProfile, Application
+from apps.models.candidates import CandidateProfile, Application, SavedJob
 from apps.serializers.jobs_serializer import JobSerializer, JobCategorySerializer
 from apps.serializers.candidates_serializer import ApplicationSerializer
 from apps.paginators import JobPaginator
@@ -14,20 +14,29 @@ class JobCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = JobCategory.objects.all().order_by('name')
     serializer_class = JobCategorySerializer
     permission_classes = [permissions.AllowAny]
+
+
 class JobViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = JobSerializer
     pagination_class = JobPaginator
     permission_classes = [permissions.AllowAny]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
     def get_queryset(self):
         qs = Job.objects.select_related('employer__company', 'category').order_by('-created_at')
-        q          = self.request.query_params.get('q')
-        category   = self.request.query_params.get('category')
-        location   = self.request.query_params.get('location')
+        q = self.request.query_params.get('q')
+        category = self.request.query_params.get('category')
+        location = self.request.query_params.get('location')
         experience = self.request.query_params.get('experience_level')
         salary_min = self.request.query_params.get('salary_min')
         salary_max = self.request.query_params.get('salary_max')
         company = self.request.query_params.get('company_name')
         ordering = self.request.query_params.get('ordering')
+
         if q:
             qs = qs.filter(Q(title__icontains=q) | Q(description__icontains=q) | Q(location__icontains=q))
         if category:
@@ -36,10 +45,11 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(location__icontains=location)
         if experience:
             qs = qs.filter(experience_level=experience)
-        if salary_min:
-            qs = qs.filter(salary_min__gte=salary_min)
-        if salary_max:
-            qs = qs.filter(salary_max__lte=salary_max)
+        if salary_min and salary_max:
+            qs = qs.filter(
+                salary_max__gte=salary_min,
+                salary_min__lte=salary_max
+            )
         if company:
             qs = qs.filter(employer__company__name__icontains=company)
 
@@ -58,7 +68,7 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
         instance = self.get_object()
         instance.views_count += 1
         instance.save(update_fields=['views_count'])
-        return Response(JobSerializer(instance).data)
+        return Response(JobSerializer(instance, context={'request': request}).data)
 
     @action(detail=True, methods=['post'], url_path='apply',
             permission_classes=[permissions.IsAuthenticated])
@@ -79,3 +89,19 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
             cover_letter=request.data.get('cover_letter', ''),
         )
         return Response(ApplicationSerializer(application).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='save',
+            permission_classes=[permissions.IsAuthenticated])
+    def save(self, request, pk=None):
+        job = self.get_object()
+        if request.user.role != 'CANDIDATE':
+            return Response({'detail': 'Chỉ ứng viên mới có thể lưu tin.'}, status=status.HTTP_403_FORBIDDEN)
+
+        profile = request.user.candidate_profile
+        saved_job, created = SavedJob.objects.get_or_create(candidate=profile, job=job)
+
+        if created:
+            return Response({'detail': 'Đã lưu công việc.'}, status=status.HTTP_201_CREATED)
+        else:
+            saved_job.delete()
+            return Response({'detail': 'Đã bỏ lưu công việc.'}, status=status.HTTP_200_OK)

@@ -30,6 +30,19 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
     const info = statusInfo[item.status] || { label: item.status, color: COLORS.primary };
     const candidateName = item.candidate_name || 'Ứng viên';
 
+    const updateRating = (val) => {
+        onUpdate(item.id, { rating: val });
+
+        AsyncStorage.getItem('token').then(token => {
+            authApis(token).post(endpoints['review-application'](jobId), {
+                application_id: item.id,
+                rating: val,
+            }).catch(() => {
+                onUpdate(item.id, { rating: item.rating });
+            });
+        });
+    };
+
     const updateStatus = async (newStatus) => {
         setMenuVisible(false);
         try {
@@ -88,7 +101,18 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
                     <Text style={{ fontSize: 12, color: '#5D4037' }}>📝 Ghi chú: {item.employers_note}</Text>
                 </View>
             ) : null}
-
+            <View style={{ flexDirection: 'row', marginTop: 10, alignItems: 'center' }}>
+                <Text style={{ fontSize: 12, color: COLORS.textLight, marginRight: 8 }}>Đánh giá:</Text>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <Text
+                        key={star}
+                        onPress={() => updateRating(star)}
+                        style={{ fontSize: 24, paddingHorizontal: 2 }}
+                    >
+                        {star <= (item.rating || 0) ? "⭐" : "☆"}
+                    </Text>
+                ))}
+            </View>
             <View style={[Styles.row, { marginTop: 10, flexWrap: 'wrap', gap: 6 }]}>
                 <Button compact mode="outlined" icon="account" onPress={() => onViewProfile(item.candidate)}>Xem hồ sơ</Button>
                 <Button compact mode="outlined" icon="note-edit" onPress={() => setNoteVisible(!noteVisible)}>Ghi chú</Button>
@@ -225,6 +249,7 @@ const ViewApplications = () => {
                 ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 30 }} />
                 : <FlatList
                     data={apps}
+                    extraData={apps}
                     keyExtractor={item => String(item.id)}
                     ListHeaderComponent={
                         <Text style={Styles.sectionHeader}>

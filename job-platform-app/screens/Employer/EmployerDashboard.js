@@ -1,7 +1,9 @@
+import { useState, useCallback, useContext } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useContext } from "react";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MyUserContext } from "../../configs/Contexts";
+import { authApis, endpoints } from "../../configs/Apis";
 import Styles, { COLORS } from "../../styles/Styles";
 
 const MenuItem = ({ icon, title, subtitle, onPress, color, disabled }) => (
@@ -23,7 +25,29 @@ const MenuItem = ({ icon, title, subtitle, onPress, color, disabled }) => (
 
 const EmployerDashboard = () => {
     const nav = useNavigation();
-    const [user] = useContext(MyUserContext);
+    const [user, dispatch] = useContext(MyUserContext);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const loadUser = useCallback(async () => {
+        try {
+            const token = await AsyncStorage.getItem("token");
+            if (token) {
+                const res = await authApis(token).get(endpoints['current-user'], {
+                    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                });
+                dispatch({ type: "login", payload: res.data });
+                setRefreshKey(prev => prev + 1);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }, [dispatch]);
+
+    useFocusEffect(
+        useCallback(() => {
+            loadUser();
+        }, [loadUser])
+    );
 
     const requireVerified = (action) => {
         if (!user?.is_verified) {
@@ -34,7 +58,7 @@ const EmployerDashboard = () => {
     };
 
     return (
-        <ScrollView style={Styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
+        <ScrollView key={refreshKey} style={Styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
             <View style={{ backgroundColor: COLORS.primary, padding: 24, paddingTop: 40 }}>
                 <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>🏢 Nhà Tuyển Dụng</Text>
                 <Text style={{ color: '#B3D9FF', marginTop: 4, fontSize: 14 }}>Quản lý tin tuyển dụng và ứng viên</Text>

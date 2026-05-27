@@ -1,8 +1,8 @@
 from django.contrib.admin import AdminSite
-
 from django.contrib import admin
 from django.utils import timezone
-from django.urls import path
+from django.urls import path, reverse
+from django.utils.html import format_html
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 from apps.models.candidates import CandidateProfile, Application
@@ -31,23 +31,33 @@ class JobPlatformAdmin(AdminSite):
 admin.site.__class__ = JobPlatformAdmin
 
 
-
-
-
 @admin.register(VerificationRequest)
 class VerificationRequestAdmin(admin.ModelAdmin):
-    list_display    = ('employer', 'get_company', 'status', 'submitted_at', 'reviewed_by', 'reviewed_at')
+    list_display    = ('employer', 'get_company', 'get_employer_profile', 'status', 'submitted_at', 'reviewed_by', 'reviewed_at')
     list_filter     = ('status', 'submitted_at')
     search_fields   = ('employer__email', 'employer__username')
-    readonly_fields = ('employer', 'submitted_at', 'reviewed_at', 'reviewed_by')
+    readonly_fields = ('employer', 'submitted_at', 'reviewed_at', 'reviewed_by', 'get_company', 'get_employer_profile')
+    fields          = ('employer', 'get_employer_profile', 'get_company', 'submitted_at', 'reviewed_at', 'reviewed_by', 'note')
     actions         = ['approve_requests', 'reject_requests']
 
     def get_company(self, obj):
         try:
-            return obj.employer.employer_profile.company.name
+            company = obj.employer.employer_profile.company
+            url = reverse('admin:apps_company_change', args=[company.id])
+            return format_html('<a href="{}">{}</a>', url, company.name)
         except Exception:
             return '—'
     get_company.short_description = 'Công ty'
+
+    def get_employer_profile(self, obj):
+        try:
+            employer_id = obj.employer.id
+            url = reverse('admin:apps_employer_change', args=[employer_id])
+            return format_html('<a href="{}">Xem hồ sơ NTD</a>', url)
+        except Exception:
+            return '—'
+
+    get_employer_profile.short_description = 'Hồ sơ NTD'
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

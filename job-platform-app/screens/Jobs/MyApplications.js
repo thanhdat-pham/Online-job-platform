@@ -88,6 +88,23 @@ const MyApplications = () => {
                         <Text style={{ color: COLORS.textLight, fontSize: 12 }}>Ngày nộp: {formatDate(item.applied_at)}</Text>
                     </View>
 
+                    {item.rating > 0 && (
+                        <View style={{ flexDirection: 'row', marginTop: 10, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 12, color: COLORS.textLight, marginRight: 8 }}>Đánh giá từ NTD:</Text>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <Text key={star} style={{ fontSize: 18 }}>
+                                    {star <= item.rating ? "⭐" : "☆"}
+                                </Text>
+                            ))}
+                        </View>
+                    )}
+
+                    {item.employers_note ? (
+                        <View style={{ marginTop: 8, padding: 8, backgroundColor: '#FFF9C4', borderRadius: 6 }}>
+                            <Text style={{ fontSize: 12, color: '#5D4037' }}>📝 Ghi chú từ NTD: {item.employers_note}</Text>
+                        </View>
+                    ) : null}
+
                     {item.status === 'pending' && (
                         <Button
                             mode="outlined" compact icon="close-circle-outline"

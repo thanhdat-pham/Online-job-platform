@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { FlatList, View, Text, ActivityIndicator, Alert } from "react-native";
 import { Button } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 import { authApis, endpoints } from "../../configs/Apis";
 import Styles, { COLORS } from "../../styles/Styles";
 import { useNavigation } from "@react-navigation/native";
@@ -17,19 +19,28 @@ const SavedJobs = () => {
             const token = await AsyncStorage.getItem('token');
             const res = await authApis(token).get(endpoints['saved-jobs']);
             setSavedJobs(res.data);
-        } catch (ex) { console.error(ex); }
-        finally { setLoading(false); }
+        } catch (ex) {
+            console.error(ex);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const unsave = async (jobId) => {
         try {
             const token = await AsyncStorage.getItem('token');
-            await authApis(token).post(endpoints['toggle-saved-job'], { job_id: jobId });
+            await authApis(token).post(endpoints['save-job'](jobId));
             setSavedJobs(prev => prev.filter(s => s.job.id !== jobId));
-        } catch { Alert.alert("Lỗi", "Không thể bỏ lưu việc làm!"); }
+        } catch {
+            Alert.alert("Lỗi", "Không thể bỏ lưu việc làm!");
+        }
     };
 
-    useEffect(() => { load(); }, []);
+    useFocusEffect(
+        useCallback(() => {
+            load();
+        }, [])
+    );
 
     if (loading) return <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }} />;
 
@@ -37,7 +48,7 @@ const SavedJobs = () => {
         <FlatList
             style={Styles.container}
             data={savedJobs}
-            keyExtractor={item => String(item.saved_id)}
+            keyExtractor={item => String(item.saved_id || item.id)}
             ListEmptyComponent={<Text style={Styles.emptyText}>Bạn chưa lưu việc làm nào</Text>}
             contentContainerStyle={{ paddingBottom: 20 }}
             renderItem={({ item }) => (
@@ -50,7 +61,10 @@ const SavedJobs = () => {
                     <View style={[Styles.row, { marginTop: 10, justifyContent: 'flex-end', gap: 8 }]}>
                         <Button compact mode="contained"
                             buttonColor={COLORS.primary}
-                            onPress={() => nav.navigate('job-detail', { jobId: item.job.id })}>
+                            onPress={() => nav.navigate('jobs', {
+                                screen: 'job-detail',
+                                params: { jobId: item.job.id }
+                            })}>
                             Xem việc
                         </Button>
                         <Button compact mode="outlined" textColor={COLORS.danger}
