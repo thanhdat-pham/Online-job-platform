@@ -1,4 +1,3 @@
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from cloudinary.models import CloudinaryField
@@ -10,9 +9,12 @@ class BaseModel(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
 
     class Meta:
-        abstract = True  
+        abstract = True
+
 
 class User(AbstractUser, BaseModel):
+
+
     ROLE_CHOICES = (
         ('ADMIN', 'Quản trị viên'),
         ('EMPLOYER', 'Nhà tuyển dụng'),
@@ -20,35 +22,29 @@ class User(AbstractUser, BaseModel):
     )
 
     email = models.EmailField(unique=True)
-    avatar = CloudinaryField('image', 
-        null=True, 
-        blank=True,
-        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])])
-    
+    avatar = CloudinaryField('image',
+                             null=True,
+                             blank=True,
+                             validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])])
+
     phone_number = models.CharField(
-        max_length=15, 
-        unique=True, 
-        null=True, 
-        blank=True, 
+        max_length=15,
+        unique=True,
+        null=True,
+        blank=True,
         verbose_name="Số điện thoại"
     )
 
     role = models.CharField(
-        max_length=20, 
-        choices=ROLE_CHOICES, 
-        default='CANDIDATE', 
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='CANDIDATE',
         verbose_name="Vai trò người dùng"
     )
 
     is_verified = models.BooleanField(
-        default=False, 
+        default=False,
         verbose_name="Trạng thái xác minh (Admin duyệt)"
-    )
-    
-    rejection_reason = models.TextField(
-        null=True, 
-        blank=True, 
-        verbose_name="Lý do từ chối duyệt"
     )
 
     def save(self, *args, **kwargs):
@@ -58,13 +54,16 @@ class User(AbstractUser, BaseModel):
 
     class Meta:
         db_table = "users"
+        verbose_name = "Người dùng"
+        verbose_name_plural = "Người dùng"
 
     def __str__(self):
         return f"{self.email} - {self.get_role_display()}"
 
+
 class VerificationRequest(models.Model):
     STATUS_CHOICES = [
-        ('pending',  'Chờ duyệt'),
+        ('pending', 'Chờ duyệt'),
         ('approved', 'Đã duyệt'),
         ('rejected', 'Từ chối'),
     ]
@@ -96,4 +95,3 @@ class VerificationRequest(models.Model):
 
     def __str__(self):
         return f"{self.employer.email} — {self.get_status_display()}"
-

@@ -20,11 +20,11 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateProfile
         fields = [
-            "user", "full_name", "is_looking_for_job",
+            "full_name", "is_looking_for_job",
             "education", "skills", "experience", "additional_info",
             "updated_date",
         ]
-        read_only_fields = ["user", "updated_date"]
+        read_only_fields = ["updated_date"]
 
 
 class ApplicationSerializer(serializers.ModelSerializer):
@@ -38,14 +38,14 @@ class ApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = [
-            "id", "candidate", "candidate_name",
+            "id", "candidate_name",
             "job", "job_id",
             "cover_letter", "employers_note", "rating",
             "status", "status_display", "applied_at",
         ]
         read_only_fields = [
-            "id", "candidate", "candidate_name",
-             "status", "status_display", "applied_at",
+            "id", "candidate_name",
+            "status", "status_display", "applied_at",
         ]
 
 
@@ -53,16 +53,17 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     job = ApplicationJobSerializer(read_only=True)
     candidate_name = serializers.ReadOnlyField(source='candidate.full_name')
     candidate_email = serializers.ReadOnlyField(source='candidate.user.email')
+    candidate_user_id = serializers.ReadOnlyField(source='candidate.user.id')
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
         model = Application
         fields = [
-            "id", "candidate", "candidate_name", "candidate_email",
+            "id", "candidate_name", "candidate_email", "candidate_user_id",
             "job", "cover_letter", "employers_note", "rating",
             "status", "status_display", "applied_at",
         ]
         read_only_fields = [
-            "id", "candidate", "candidate_name", "candidate_email",
+            "id", "candidate_name", "candidate_email", "candidate_user_id",
             "job", "cover_letter", "applied_at", "status_display",
         ]

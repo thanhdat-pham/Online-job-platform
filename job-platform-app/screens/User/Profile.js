@@ -19,7 +19,6 @@ const Profile = ({ navigation }) => {
                 const fetchStatus = async () => {
                     try {
                         const token = await AsyncStorage.getItem('token');
-
                         const userRes = await authApis(token).get(endpoints['current-user']);
                         const freshUser = userRes.data;
                         dispatch({ type: "LOGIN", payload: freshUser });
@@ -61,8 +60,16 @@ const Profile = ({ navigation }) => {
     );
 
     const logout = async () => {
+        try {
+            const token = await AsyncStorage.getItem('token');
+            if (token) await authApis(token).post(endpoints['logout']);
+        } catch (_) { }
         await AsyncStorage.removeItem('token');
         dispatch({ type: "LOGOUT" });
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'main-tabs' }],
+        });
     };
 
     const roleLabel = user?.role === 'EMPLOYER' ? 'Nhà tuyển dụng' : 'Ứng viên';
@@ -71,14 +78,12 @@ const Profile = ({ navigation }) => {
         if (user?.role === 'EMPLOYER') {
             const employer = user?.employer_profile || user;
             const company = employer?.company_details || {};
-
             return [
                 { label: 'Tên công ty', value: company?.name },
                 { label: 'Địa chỉ', value: company?.address },
                 { label: 'Email', value: user?.email },
             ];
         }
-
         return [
             { label: 'Họ và tên', value: user?.full_name },
             { label: 'Số điện thoại', value: user?.phone_number || 'Chưa cập nhật' },
@@ -150,7 +155,7 @@ const Profile = ({ navigation }) => {
                     {user?.role === 'EMPLOYER' ? "Sửa hồ sơ NTD" : (isProfileComplete ? "Sửa hồ sơ" : "Hoàn thiện hồ sơ")}
                 </Button>
 
-                <Button icon="lock" mode="outlined" onPress={() => navigation.navigate("")} style={{ marginBottom: 10 }}>
+                <Button icon="lock" mode="outlined" onPress={() => navigation.navigate("ChangePassword")} style={{ marginBottom: 10 }}>
                     Đổi mật khẩu
                 </Button>
 

@@ -8,7 +8,7 @@ from apps.models.jobs import Job
 from apps.models.candidates import Application
 from apps.serializers.jobs_serializer import JobSerializer
 from apps.serializers.employers_serializer import EmployerProfileSerializer
-from apps.serializers.candidates_serializer import ApplicationSerializer
+from apps.serializers.candidates_serializer import ApplicationSerializer, ApplicationDetailSerializer
 from apps.paginators import JobPaginator
 from apps.permissions import IsEmployer, IsVerifiedEmployer
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
@@ -65,7 +65,6 @@ class EmployerProfileViewSet(viewsets.ViewSet):
             'submitted_at': latest.submitted_at,
         })
 
-
     @action(detail=False, methods=['get', 'patch', 'put'], url_path='profile')
     def profile(self, request):
         try:
@@ -88,6 +87,7 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated, IsEmployer, IsVerifiedEmployer]
     pagination_class = JobPaginator
+
     def get_employer(self, user):
         try:
             return user.employer_profile
@@ -158,7 +158,8 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Không tìm thấy tin tuyển dụng.'}, status=status.HTTP_404_NOT_FOUND)
 
         apps = Application.objects.filter(job=job).select_related('candidate__user').order_by('-applied_at')
-        return Response(ApplicationSerializer(apps, many=True).data)
+
+        return Response(ApplicationDetailSerializer(apps, many=True).data)
 
     @action(detail=True, methods=['post'], url_path='review-application')
     def review_application(self, request, pk=None):
@@ -214,28 +215,25 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
             except Exception:
                 pass
 
-        return Response(ApplicationSerializer(app).data)
+
+        return Response(ApplicationDetailSerializer(app).data)
 
     @action(detail=False, methods=['get'], url_path='stats')
     def stats(self, request):
         from django.db.models import Count, Avg, Q
         from django.db.models.functions import TruncMonth, TruncQuarter, TruncYear
-        import datetime
 
         employer = self.get_employer(request.user)
         if not employer:
             return Response({'detail': 'Chưa có hồ sơ nhà tuyển dụng.'}, status=status.HTTP_404_NOT_FOUND)
-
 
         period = request.query_params.get('period', 'month')
 
         jobs = Job.objects.filter(employer=employer)
         all_apps = Application.objects.filter(job__in=jobs)
 
-
         total_jobs = jobs.count()
         total_applications = all_apps.count()
-        total_views = jobs.aggregate(total=Count('views_count'))['total'] or 0
         total_views = sum(j.views_count for j in jobs)
 
         accepted = all_apps.filter(status='accepted').count()
@@ -243,13 +241,10 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         pending = all_apps.filter(status='pending').count()
         interviewing = all_apps.filter(status='interviewing').count()
 
-
         acceptance_rate = round(accepted / total_applications * 100, 1) if total_applications else 0
-
 
         avg_rating = all_apps.filter(rating__isnull=False).aggregate(avg=Avg('rating'))['avg']
         avg_rating = round(avg_rating, 1) if avg_rating else None
-
 
         if period == 'quarter':
             trunc_fn = TruncQuarter
@@ -257,7 +252,7 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         elif period == 'year':
             trunc_fn = TruncYear
             fmt = lambda d: str(d.year)
-        else:  # month (mặc định)
+        else:
             trunc_fn = TruncMonth
             fmt = lambda d: d.strftime('%m/%Y')
 
@@ -273,7 +268,6 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
             .order_by('period')
         )
 
-
         job_performance = (
             jobs.annotate(
                 app_count=Count('applications'),
@@ -281,26 +275,21 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
                 avg_rating=Avg('applications__rating'),
             )
             .values('id', 'title', 'views_count', 'app_count', 'accepted_count', 'avg_rating', 'deadline', 'created_at')
-            .order_by('-app_count')[:10]  # top 10 tin có nhiều hồ sơ nhất
+            .order_by('-app_count')[:10]
         )
 
         return Response({
-
             'total_jobs': total_jobs,
             'total_applications': total_applications,
             'total_views': total_views,
             'acceptance_rate': acceptance_rate,
             'avg_rating': avg_rating,
-
-
             'status_breakdown': {
                 'pending': pending,
                 'interviewing': interviewing,
                 'accepted': accepted,
                 'rejected': rejected,
             },
-
-
             'trend': [
                 {
                     'label': fmt(t['period']),
@@ -310,8 +299,6 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
                 }
                 for t in trend
             ],
-
-
             'job_performance': [
                 {
                     'id': j['id'],

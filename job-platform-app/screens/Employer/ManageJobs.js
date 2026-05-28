@@ -29,7 +29,8 @@ const ManageJobs = () => {
             if (route.params?.openApplications && data.length > 0) {
                 nav.navigate('view-applications', { jobId: data[0].id, jobTitle: data[0].title });
             }
-        } catch (ex) { console.error(ex); }
+        } catch (ex) { 
+        }
         finally { setLoading(false); }
     };
 
@@ -76,7 +77,7 @@ const ManageJobs = () => {
                 <View style={Styles.card}>
                     <Text style={{ fontWeight: '700', fontSize: 15, color: COLORS.text }}>{item.title}</Text>
                     <Text style={{ color: COLORS.textLight, fontSize: 13, marginTop: 4 }}>
-                        📍 {item.location} · 📅 {item.deadline ? new Date(item.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
+                        {'\u{1F4CD} '}{item.location} · {'\u{1F4C5} '}{item.deadline ? new Date(item.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn'}
                     </Text>
                     <View style={[Styles.row, { marginTop: 10, justifyContent: 'flex-end', flexWrap: 'wrap', gap: 6 }]}>
                         <Button

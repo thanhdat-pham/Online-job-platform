@@ -39,9 +39,10 @@ const EmployerDashboard = () => {
                 setRefreshKey(prev => prev + 1);
             }
         } catch (err) {
-            console.error(err);
+
         }
     }, [dispatch]);
+
 
     useFocusEffect(
         useCallback(() => {
@@ -60,30 +61,45 @@ const EmployerDashboard = () => {
     return (
         <ScrollView key={refreshKey} style={Styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
             <View style={{ backgroundColor: COLORS.primary, padding: 24, paddingTop: 40 }}>
-                <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>🏢 Nhà Tuyển Dụng</Text>
+                <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{'\u{1F3E2}'} Nhà Tuyển Dụng</Text>
                 <Text style={{ color: '#B3D9FF', marginTop: 4, fontSize: 14 }}>Quản lý tin tuyển dụng và ứng viên</Text>
             </View>
 
             {!user?.is_verified && (
                 <View style={{ backgroundColor: '#fff8e1', margin: 16, padding: 12, borderRadius: 8 }}>
-                    <Text style={{ color: '#e65100', fontSize: 13 }}>⚠️ Tài khoản chưa được xác minh. Một số chức năng bị hạn chế.</Text>
+                    <Text style={{ color: '#e65100', fontSize: 13 }}>{'\u{26A0}\u{FE0F}'} Tài khoản chưa được xác minh. Một số chức năng bị hạn chế.</Text>
                 </View>
             )}
 
             <Text style={Styles.sectionHeader}>Quản lý tin tuyển dụng</Text>
-            <MenuItem icon="📝" title="Đăng tin tuyển dụng" subtitle="Tạo tin tuyển dụng mới" color="#E3F2FD"
+            <MenuItem
+                icon={'\u{1F4DD}'}
+                title="Đăng tin tuyển dụng"
+                subtitle="Tạo tin tuyển dụng mới"
+                color="#E3F2FD"
                 disabled={!user?.is_verified}
-                onPress={() => requireVerified(() => nav.navigate('post-job'))} />
-            <MenuItem icon="📋" title="Danh sách tin đăng" subtitle="Xem và quản lý tin tuyển dụng" color="#F3E5F5"
+                onPress={() => requireVerified(() => nav.navigate('post-job'))}
+            />
+            <MenuItem
+                icon={'\u{1F4CB}'}
+                title="Danh sách tin đăng"
+                subtitle="Xem và quản lý tin tuyển dụng"
+                color="#F3E5F5"
                 disabled={!user?.is_verified}
-                onPress={() => requireVerified(() => nav.navigate('manage-jobs'))} />
+                onPress={() => requireVerified(() => nav.navigate('manage-jobs'))}
+            />
 
             <Text style={Styles.sectionHeader}>Quản lý ứng viên</Text>
-            <MenuItem icon="👥" title="Xem hồ sơ ứng tuyển" subtitle="Duyệt và xem xét hồ sơ ứng viên" color="#E8F5E9"
-                disabled={!user?.is_verified}
-                onPress={() => requireVerified(() => nav.navigate('view-applications'))} />
             <MenuItem
-                icon="📊"
+                icon={'\u{1F465}'}
+                title="Xem hồ sơ ứng tuyển"
+                subtitle="Duyệt và xem xét hồ sơ ứng viên"
+                color="#E8F5E9"
+                disabled={!user?.is_verified}
+                onPress={() => requireVerified(() => nav.navigate('view-applications'))}
+            />
+            <MenuItem
+                icon={'\u{1F4CA}'}
                 title="Thống kê tuyển dụng"
                 subtitle="Xem báo cáo hiệu quả tuyển dụng"
                 color="#FFF3E0"
