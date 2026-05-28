@@ -96,7 +96,7 @@ const JobDetail = () => {
                 <View style={s.card}>
                     <Text style={s.title}>{job.title}</Text>
                     <Text style={s.company}>🏢 {job.employer?.company_name || "Công ty"}</Text>
-                    <Text style={s.infoText}>📍 {job.location || "Không xác định"}</Text>
+                    <Text style={s.infoText}>📌 {job.location || "Không xác định"}</Text>
                     <Text style={[s.infoText, { color: "#16a34a", fontWeight: "600", marginTop: 4 }]}>💰 {salary}</Text>
                     <View style={[s.infoRow, { marginTop: 6 }]}>
                         <Text style={s.infoText}>📅 Hạn: {job.deadline ? new Date(job.deadline).toLocaleDateString("vi-VN") : "Không giới hạn"}</Text>

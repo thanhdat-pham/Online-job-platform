@@ -14,7 +14,7 @@ from apps.permissions import IsEmployer, IsVerifiedEmployer
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-
+from django.db.models import Sum
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -98,7 +98,7 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
         employer = self.get_employer(request.user)
         if not employer:
             return Response([])
-        jobs = Job.objects.filter(employer=employer).order_by('-created_at')
+        jobs = Job.objects.filter(employer=employer).select_related('employer__company', 'category').order_by('-created_at')
         paginator = JobPaginator()
         page = paginator.paginate_queryset(jobs, request)
         if page is not None:
@@ -234,7 +234,7 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
 
         total_jobs = jobs.count()
         total_applications = all_apps.count()
-        total_views = sum(j.views_count for j in jobs)
+        total_views = jobs.aggregate(total=Sum('views_count'))['total'] or 0
 
         accepted = all_apps.filter(status='accepted').count()
         rejected = all_apps.filter(status='rejected').count()

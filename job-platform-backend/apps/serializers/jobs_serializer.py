@@ -11,7 +11,7 @@ class JobEmployerSerializer(serializers.ModelSerializer):
         model = Employer
         fields = ['company_name', 'company_address', 'company_logo' ]
 
-    def get_company_logo(self, obj):  # ← THÊM method này
+    def get_company_logo(self, obj):
         if obj.company and obj.company.logo:
             return obj.company.logo.url
         return None
@@ -43,6 +43,7 @@ class JobSerializer(serializers.ModelSerializer):
     def get_is_saved(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated and hasattr(request.user, 'candidate_profile'):
-            return obj.saved_by_candidates.filter(candidate=request.user.candidate_profile).exists()
-        return False
+            profile = request.user.candidate_profile
 
+            return any(s.candidate_id == profile.pk for s in obj.saved_by_candidates.all())
+        return False
