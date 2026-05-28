@@ -6,10 +6,34 @@ from django.utils.html import format_html
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 from apps.models.candidates import CandidateProfile, Application
+from apps.models.notification import Notification
 from apps.views.dashboard_view import dashboard_view
 from apps.models.employers import Company, Employer
 from apps.models.jobs import Job, JobCategory
 from apps.models.user import User, VerificationRequest
+
+
+def _notify_verification(employer, approved, note=''):
+    if approved:
+        msg = 'Tài khoản nhà tuyển dụng của bạn đã được xác minh thành công. Bạn có thể đăng tin tuyển dụng ngay bây giờ.'
+        if note:
+            msg += f' Ghi chú từ admin: {note}'
+        Notification.objects.create(
+            user=employer,
+            title='✅ Tài khoản đã được xác minh',
+            message=msg,
+            notification_type='employer_verify',
+        )
+    else:
+        msg = 'Yêu cầu xác minh tài khoản của bạn đã bị từ chối. Vui lòng kiểm tra lại thông tin và gửi lại yêu cầu.'
+        if note:
+            msg += f' Lý do: {note}'
+        Notification.objects.create(
+            user=employer,
+            title='❌ Yêu cầu xác minh bị từ chối',
+            message=msg,
+            notification_type='employer_verify',
+        )
 
 
 class JobPlatformAdmin(AdminSite):
@@ -37,7 +61,7 @@ class VerificationRequestAdmin(admin.ModelAdmin):
     list_filter     = ('status', 'submitted_at')
     search_fields   = ('employer__email', 'employer__username')
     readonly_fields = ('employer', 'submitted_at', 'reviewed_at', 'reviewed_by', 'get_company', 'get_employer_profile')
-    fields          = ('employer', 'get_employer_profile', 'get_company', 'submitted_at', 'reviewed_at', 'reviewed_by', 'note')
+    fields          = ('employer', 'get_employer_profile', 'get_company', 'submitted_at', 'reviewed_at', 'reviewed_by', 'status', 'note')
     actions         = ['approve_requests', 'reject_requests']
 
     def get_company(self, obj):
@@ -51,16 +75,19 @@ class VerificationRequestAdmin(admin.ModelAdmin):
 
     def get_employer_profile(self, obj):
         try:
-            employer_id = obj.employer.id
-            url = reverse('admin:apps_employer_change', args=[employer_id])
+            url = reverse('admin:apps_employer_change', args=[obj.employer.id])
             return format_html('<a href="{}">Xem hồ sơ NTD</a>', url)
         except Exception:
             return '—'
-
     get_employer_profile.short_description = 'Hồ sơ NTD'
 
     def save_model(self, request, obj, form, change):
+        if not obj.reviewed_by:
+            obj.reviewed_by = request.user
+        if not obj.reviewed_at:
+            obj.reviewed_at = timezone.now()
         super().save_model(request, obj, form, change)
+
         if obj.status == 'approved':
             User.objects.filter(pk=obj.employer.pk).update(is_verified=True, rejection_reason='')
             user = obj.employer
@@ -69,8 +96,11 @@ class VerificationRequestAdmin(admin.ModelAdmin):
                 if not company.is_preset:
                     company.is_preset = True
                     company.save()
+            _notify_verification(obj.employer, approved=True, note=obj.note)
+
         elif obj.status == 'rejected':
             User.objects.filter(pk=obj.employer.pk).update(is_verified=False)
+            _notify_verification(obj.employer, approved=False, note=obj.note)
 
     @admin.action(description='✅ Duyệt các yêu cầu đã chọn')
     def approve_requests(self, request, queryset):
@@ -80,6 +110,7 @@ class VerificationRequestAdmin(admin.ModelAdmin):
             vr.reviewed_by = request.user
             vr.save()
             User.objects.filter(pk=vr.employer.pk).update(is_verified=True, rejection_reason='')
+            _notify_verification(vr.employer, approved=True, note=vr.note)
         self.message_user(request, f"Đã duyệt {queryset.count()} yêu cầu.")
 
     @admin.action(description='❌ Từ chối các yêu cầu đã chọn')
@@ -90,6 +121,7 @@ class VerificationRequestAdmin(admin.ModelAdmin):
             vr.reviewed_by = request.user
             vr.save()
             User.objects.filter(pk=vr.employer.pk).update(is_verified=False)
+            _notify_verification(vr.employer, approved=False, note=vr.note)
         self.message_user(request, f"Đã từ chối {queryset.count()} yêu cầu.")
 
 
@@ -99,8 +131,9 @@ class UserAdmin(admin.ModelAdmin):
     list_filter   = ('role', 'is_verified', 'is_active')
     search_fields = ('email', 'username', 'phone_number')
     ordering      = ('-created_date',)
+    readonly_fields = ('avatar',)
     fieldsets = (
-        ("Tài khoản",           {"fields": ("username", "password")}),
+        ("Tài khoản",           {"fields": ("username",)}),
         ("Thông tin cá nhân",   {"fields": ("email", "phone_number", "avatar")}),
         ("Vai trò & Phê duyệt", {"fields": ("role", "is_verified", "rejection_reason", "is_active", "is_staff", "is_superuser")}),
     )
@@ -116,6 +149,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = ('candidate', 'job', 'status', 'applied_at')
     list_filter  = ('status',)
+    exclude = ('cover_letter',)
 
 
 @admin.register(Company)
@@ -127,6 +161,7 @@ class CompanyAdmin(admin.ModelAdmin):
 @admin.register(Employer)
 class EmployerAdmin(admin.ModelAdmin):
     list_display = ('user', 'company', 'position', 'full_name')
+    exclude = ('company_size',)
 
 
 @admin.register(JobCategory)

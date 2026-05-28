@@ -22,10 +22,7 @@ const Profile = ({ navigation }) => {
 
                         const userRes = await authApis(token).get(endpoints['current-user']);
                         const freshUser = userRes.data;
-                        console.log('freshUser:', JSON.stringify(freshUser));
-                        if (freshUser.is_verified !== user.is_verified) {
-                            dispatch({ type: "LOGIN", payload: freshUser });
-                        }
+                        dispatch({ type: "LOGIN", payload: freshUser });
 
                         if (!freshUser.is_verified) {
                             const res = await authApis(token).get(endpoints['verification-status']);

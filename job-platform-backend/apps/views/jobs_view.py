@@ -1,10 +1,10 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from django.db.models import Q
 from apps.models.jobs import Job, JobCategory
 from apps.models.candidates import CandidateProfile, Application, SavedJob
+from apps.models.notification import Notification
 from apps.serializers.jobs_serializer import JobSerializer, JobCategorySerializer
 from apps.serializers.candidates_serializer import ApplicationSerializer
 from apps.paginators import JobPaginator
@@ -46,10 +46,7 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
         if experience:
             qs = qs.filter(experience_level=experience)
         if salary_min and salary_max:
-            qs = qs.filter(
-                salary_max__gte=salary_min,
-                salary_min__lte=salary_max
-            )
+            qs = qs.filter(salary_max__gte=salary_min, salary_min__lte=salary_max)
         if company:
             qs = qs.filter(employer__company__name__icontains=company)
 
@@ -88,6 +85,19 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
             job=job,
             cover_letter=request.data.get('cover_letter', ''),
         )
+
+        try:
+            employer_user = job.employer.user
+            name = profile.full_name or request.user.username
+            Notification.objects.create(
+                user=employer_user,
+                title='Ứng viên mới ứng tuyển',
+                message=f'{name} vừa nộp hồ sơ cho tin "{job.title}".',
+                notification_type='new_application',
+            )
+        except Exception:
+            pass
+
         return Response(ApplicationSerializer(application).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='save',

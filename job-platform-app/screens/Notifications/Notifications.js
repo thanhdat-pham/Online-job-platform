@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { FlatList, View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
 import { Button } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import { authApis, endpoints } from "../../configs/Apis";
 import Styles, { COLORS } from "../../styles/Styles";
 
@@ -24,7 +25,7 @@ const NotificationItem = ({ item, onRead }) => (
                 <Text style={{ fontWeight: item.is_read ? '500' : '700', color: COLORS.text, fontSize: 14 }}>
                     {item.title}
                 </Text>
-                <Text style={{ color: COLORS.textLight, fontSize: 13, marginTop: 2 }} numberOfLines={2}>
+                <Text style={{ color: COLORS.textLight, fontSize: 13, marginTop: 2 }} numberOfLines={3}>
                     {item.message}
                 </Text>
                 <Text style={{ color: COLORS.textLight, fontSize: 11, marginTop: 4 }}>
@@ -41,16 +42,37 @@ const NotificationItem = ({ item, onRead }) => (
 const Notifications = () => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const loadedOnce = useRef(false);
 
-    const load = async () => {
+    const load = useCallback(async (force = false) => {
+        if (loadedOnce.current && !force) return;
         try {
             setLoading(true);
             const token = await AsyncStorage.getItem('token');
             const res = await authApis(token).get(endpoints['notifications']);
             setNotifications(res.data);
+            loadedOnce.current = true;
         } catch (ex) { console.error(ex); }
         finally { setLoading(false); }
-    };
+    }, []);
+
+    useFocusEffect(useCallback(() => {
+        if (!loadedOnce.current) {
+            load(true);
+        } else {
+            const refresh = async () => {
+                try {
+                    const token = await AsyncStorage.getItem('token');
+                    const res = await authApis(token).get(endpoints['notifications']);
+                    setNotifications(prev => {
+                        const readIds = new Set(prev.filter(n => n.is_read).map(n => n.id));
+                        return res.data.map(n => readIds.has(n.id) ? { ...n, is_read: true } : n);
+                    });
+                } catch { }
+            };
+            refresh();
+        }
+    }, [load]));
 
     const markRead = async (id) => {
         try {
@@ -68,8 +90,6 @@ const Notifications = () => {
         } catch { }
     };
 
-    useEffect(() => { load(); }, []);
-
     if (loading) return <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }} />;
 
     const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -80,7 +100,7 @@ const Notifications = () => {
             data={notifications}
             keyExtractor={item => String(item.id)}
             ListHeaderComponent={
-                <View style={[Styles.row, { justifyContent: 'space-between', padding: 12 }]}>
+                <View style={[Styles.row, { justifyContent: 'space-between', padding: 12, paddingTop: 16 }]}>
                     <Text style={Styles.sectionHeader}>
                         Thông báo {unreadCount > 0 ? `(${unreadCount} chưa đọc)` : ''}
                     </Text>
@@ -90,7 +110,7 @@ const Notifications = () => {
                 </View>
             }
             ListEmptyComponent={<Text style={Styles.emptyText}>Không có thông báo nào</Text>}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            contentContainerStyle={{ paddingBottom: 20, paddingTop: 8 }}
             renderItem={({ item }) => <NotificationItem item={item} onRead={markRead} />}
         />
     );

@@ -107,5 +107,17 @@ class ApplicationViewSet(viewsets.ViewSet):
             return Response({'detail': 'Không tìm thấy đơn ứng tuyển.'}, status=status.HTTP_404_NOT_FOUND)
         if app.status != 'pending':
             return Response({'detail': 'Chỉ rút được đơn khi trạng thái là "Chờ xử lý".'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            from apps.models.notification import Notification
+            employer_user = app.job.employer.user
+            name = getattr(app.candidate, 'full_name', None) or app.candidate.user.username
+            Notification.objects.create(
+                user=employer_user,
+                title='Ứng viên rút đơn',
+                message=f'{name} đã rút hồ sơ khỏi tin "{app.job.title}".',
+                notification_type='new_application',
+            )
+        except Exception:
+            pass
         app.delete()
         return Response({'message': 'Đã rút đơn thành công.'}, status=status.HTTP_200_OK)
