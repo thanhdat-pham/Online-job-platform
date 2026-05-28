@@ -56,7 +56,7 @@ const SavedJobs = () => {
                     <Text style={{ fontWeight: '700', fontSize: 15, color: COLORS.text }}>{item.job.title}</Text>
                     <Text style={{ color: COLORS.primary, marginTop: 2 }}>🏢 {item.job.employer?.company_name || 'Công ty'}</Text>
                     <Text style={{ color: COLORS.textLight, fontSize: 12, marginTop: 4 }}>
-                        📍 {item.job.location} · 📅 Hạn: {item.job.deadline ? new Date(item.job.deadline).toLocaleDateString('vi-VN') : '—'}
+                        📌 {item.job.location} · 📅 Hạn: {item.job.deadline ? new Date(item.job.deadline).toLocaleDateString('vi-VN') : '—'}
                     </Text>
                     <View style={[Styles.row, { marginTop: 10, justifyContent: 'flex-end', gap: 8 }]}>
                         <Button compact mode="contained"

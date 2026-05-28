@@ -77,7 +77,7 @@ const Register = () => {
             await Apis.post(endpoints['register'], fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             Alert.alert("Thành công", "Đăng ký thành công!", [{ text: 'Đăng nhập', onPress: () => nav.navigate('login') }]);
         } catch (ex) {
-            console.log("LỖI 400 CHI TIẾT:", JSON.stringify(ex?.response?.data));
+
             const errData = ex?.response?.data;
             if (errData && typeof errData === 'object') {
                 const messages = Object.entries(errData)

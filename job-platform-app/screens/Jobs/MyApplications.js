@@ -79,7 +79,7 @@ const MyApplications = () => {
                 <Card.Content>
                     <Text style={{ fontWeight: '700', fontSize: 16, color: COLORS.text }}>{item.job?.title}</Text>
                     {item.job?.company_name ? <Text style={{ color: COLORS.textLight, marginTop: 2, fontSize: 13 }}>🏢 {item.job.company_name}</Text> : null}
-                    {item.job?.location ? <Text style={{ color: COLORS.textLight, marginTop: 2, fontSize: 13 }}>📍 {item.job.location}</Text> : null}
+                    {item.job?.location ? <Text style={{ color: COLORS.textLight, marginTop: 2, fontSize: 13 }}>📌 {item.job.location}</Text> : null}
 
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8, flexWrap: 'wrap' }}>
                         <Chip style={{ backgroundColor: cfg.bg }} textStyle={{ color: cfg.color, fontWeight: '600', fontSize: 12 }}>

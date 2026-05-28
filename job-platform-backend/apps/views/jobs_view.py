@@ -27,7 +27,7 @@ class JobViewSet(viewsets.ReadOnlyModelViewSet):
         return context
 
     def get_queryset(self):
-        qs = Job.objects.select_related('employer__company', 'category').order_by('-created_at')
+        qs = Job.objects.select_related('employer__company', 'category') .prefetch_related('saved_by_candidates').order_by('-created_at')
         q = self.request.query_params.get('q')
         category = self.request.query_params.get('category')
         location = self.request.query_params.get('location')
