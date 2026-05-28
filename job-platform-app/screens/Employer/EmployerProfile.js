@@ -25,7 +25,8 @@ const EmployerProfile = ({ navigation }) => {
             ]);
             setProfile(profileRes.data);
             dispatch({ type: "login", payload: userRes.data });
-        } catch (ex) { console.error(ex); }
+        } catch (ex) {
+        }
         finally { setLoading(false); }
     }, [dispatch]);
 
@@ -51,11 +52,11 @@ const EmployerProfile = ({ navigation }) => {
 
     return (
         <ScrollView style={Styles.container} contentContainerStyle={[Styles.padding, { paddingBottom: 40 }]}>
-            <Text style={[Styles.subject, { marginBottom: 12 }]}>🏢 Hồ sơ Nhà tuyển dụng</Text>
+            <Text style={[Styles.subject, { marginBottom: 12 }]}>{'\u{1F3E2}'} Hồ sơ Nhà tuyển dụng</Text>
 
             {user?.is_verified && (
                 <View style={{ backgroundColor: '#e8f5e9', padding: 10, borderRadius: 8, marginBottom: 12 }}>
-                    <Text style={{ color: '#2e7d32', fontSize: 13 }}>✅ Tài khoản đã được xác minh</Text>
+                    <Text style={{ color: '#2e7d32', fontSize: 13 }}>{'\u{2705}'} Tài khoản đã được xác minh</Text>
                 </View>
             )}
 

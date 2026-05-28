@@ -37,7 +37,7 @@ const ApplyJob = ({ route }) => {
 
             <View style={{ marginTop: 16, padding: 12, borderRadius: 10, backgroundColor: '#E3F2FD', borderLeftWidth: 4, borderLeftColor: COLORS.primary }}>
                 <Text style={{ color: '#1565C0', fontSize: 13, lineHeight: 20 }}>
-                    💡 CV được quản lý riêng tại mục <Text style={{ fontWeight: '700' }}>Hồ sơ ứng viên</Text>. Tại đây chỉ cần viết thư giới thiệu.
+                    📋 CV được quản lý riêng tại mục <Text style={{ fontWeight: '700' }}>Hồ sơ ứng viên</Text>. Tại đây chỉ cần viết thư giới thiệu.
                 </Text>
             </View>
 

@@ -14,8 +14,8 @@ const PRIMARY_COLOR = COLORS.primary ?? "#1e3a8a";
 
 const SORT_OPTIONS = [
     { key: null, label: "Mặc định" },
-    { key: "salary_desc", label: "Lương cao → thấp" },
-    { key: "salary_asc", label: "Lương thấp → cao" },
+    { key: "salary_desc", label: "Lương cao -> thấp" },
+    { key: "salary_asc", label: "Lương thấp -> cao" },
     { key: "date_desc", label: "Mới nhất" },
     { key: "date_asc", label: "Cũ nhất" },
 ];
@@ -25,7 +25,6 @@ const COMPARE_CRITERIA = [
     { key: "experience", label: "Kinh nghiệm" },
     { key: "benefits", label: "Phúc lợi" },
     { key: "location", label: "Địa điểm" },
-
     { key: "category", label: "Ngành nghề" },
 ];
 
@@ -39,8 +38,8 @@ const EXPERIENCE_OPTIONS = [
 
 const formatSalary = (min, max) => {
     if (!min && !max) return "Thỏa thuận";
-    const fmt = (n) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(0)}tr` : `${(n / 1_000).toFixed(0)}k`;
-    if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+    const fmt = (n) => n >= 1000000 ? `${(n / 1000000).toFixed(0)}tr` : `${(n / 1000).toFixed(0)}k`;
+    if (min && max) return `${fmt(min)} - ${fmt(max)}`;
     if (min) return `Từ ${fmt(min)}`;
     return `Đến ${fmt(max)}`;
 };
@@ -48,21 +47,21 @@ const formatSalary = (min, max) => {
 const FilterModal = ({ visible, onClose, filters, setFilter }) => {
     const [locationText, setLocationText] = useState(filters.location ?? "");
     const [companyText, setCompanyText] = useState(filters.company ?? "");
-    const [salaryMin, setSalaryMin] = useState(filters.salary_min ? String(filters.salary_min / 1_000_000) : "");
-    const [salaryMax, setSalaryMax] = useState(filters.salary_max ? String(filters.salary_max / 1_000_000) : "");
+    const [salaryMin, setSalaryMin] = useState(filters.salary_min ? String(filters.salary_min / 1000000) : "");
+    const [salaryMax, setSalaryMax] = useState(filters.salary_max ? String(filters.salary_max / 1000000) : "");
 
     useEffect(() => {
         setLocationText(filters.location ?? "");
         setCompanyText(filters.company ?? "");
-        setSalaryMin(filters.salary_min ? String(filters.salary_min / 1_000_000) : "");
-        setSalaryMax(filters.salary_max ? String(filters.salary_max / 1_000_000) : "");
+        setSalaryMin(filters.salary_min ? String(filters.salary_min / 1000000) : "");
+        setSalaryMax(filters.salary_max ? String(filters.salary_max / 1000000) : "");
     }, [visible, filters]);
 
     const handleApply = () => {
         setFilter("location", locationText || null);
         setFilter("company", companyText || null);
-        setFilter("salary_min", salaryMin ? Number(salaryMin) * 1_000_000 : null);
-        setFilter("salary_max", salaryMax ? Number(salaryMax) * 1_000_000 : null);
+        setFilter("salary_min", salaryMin ? Number(salaryMin) * 1000000 : null);
+        setFilter("salary_max", salaryMax ? Number(salaryMax) * 1000000 : null);
         onClose();
     };
 
@@ -106,7 +105,7 @@ const FilterModal = ({ visible, onClose, filters, setFilter }) => {
                         <Text style={fm.sectionTitle}>Mức lương mong muốn (Triệu VNĐ)</Text>
                         <View style={fm.salaryWrapper}>
                             <Searchbar placeholder="Từ" value={salaryMin} onChangeText={setSalaryMin} style={fm.salaryInput} inputStyle={fm.inputStyle} keyboardType="numeric" />
-                            <Text style={fm.salaryDash}>–</Text>
+                            <Text style={fm.salaryDash}>-</Text>
                             <Searchbar placeholder="Đến" value={salaryMax} onChangeText={setSalaryMax} style={fm.salaryInput} inputStyle={fm.inputStyle} keyboardType="numeric" />
                         </View>
                     </ScrollView>
@@ -119,12 +118,14 @@ const FilterModal = ({ visible, onClose, filters, setFilter }) => {
         </Modal>
     );
 };
+
 const EXPERIENCE_LABEL = {
     "no_exp": "Chưa có kinh nghiệm",
     "1_year": "1 năm kinh nghiệm",
     "2_years": "2 năm kinh nghiệm",
     "senior": "Trên 5 năm kinh nghiệm",
 };
+
 const CompareModal = ({ visible, jobs, onClose, onRemove }) => {
     if (!jobs.length) return null;
     return (
@@ -162,10 +163,10 @@ const CompareModal = ({ visible, jobs, onClose, onRemove }) => {
                                             <Text style={cmp.cellValue}>
                                                 {cr.key === "salary" && formatSalary(job.salary_min, job.salary_max)}
                                                 {cr.key === "experience" && (EXPERIENCE_LABEL[job.experience_level] ?? "Không yêu cầu")}
-                                                {cr.key === "benefits" && (job.benefits ?? "—")}
-                                                {cr.key === "location" && (job.location ?? "—")}
-                                                {cr.key === "job_type" && (job.job_type ?? "—")}
-                                                {cr.key === "category" && (job.category_name ?? job.category?.name ?? "—")}
+                                                {cr.key === "benefits" && (job.benefits ?? "-")}
+                                                {cr.key === "location" && (job.location ?? "-")}
+                                                {cr.key === "job_type" && (job.job_type ?? "-")}
+                                                {cr.key === "category" && (job.category_name ?? job.category?.name ?? "-")}
                                             </Text>
                                         </View>
                                     ))}
@@ -186,11 +187,11 @@ const CompareModal = ({ visible, jobs, onClose, onRemove }) => {
 const Pagination = ({ page, totalPages, onPrev, onNext }) => (
     <View style={pg.row}>
         <TouchableOpacity style={[pg.btn, page <= 1 && pg.disabled]} onPress={onPrev} disabled={page <= 1}>
-            <Text style={pg.arrow}>‹</Text>
+            <Text style={pg.arrow}>{"\u2039"}</Text>
         </TouchableOpacity>
         <Text style={pg.info}>Trang {page} / {totalPages ?? 1}</Text>
         <TouchableOpacity style={[pg.btn, !totalPages || page >= totalPages ? pg.disabled : null]} onPress={onNext} disabled={!totalPages || page >= totalPages}>
-            <Text style={pg.arrow}>›</Text>
+            <Text style={pg.arrow}>{"\u203A"}</Text>
         </TouchableOpacity>
     </View>
 );
@@ -224,7 +225,7 @@ const CandidateHome = () => {
         Apis.get(endpoints["job-categories"]).then(res => {
             const rawData = res.data.results ?? res.data;
             setCategories([{ id: null, name: "Tất cả ngành nghề" }, ...rawData]);
-        }).catch(err => console.error(err));
+        }).catch(() => { });
     }, []);
 
     useEffect(() => {

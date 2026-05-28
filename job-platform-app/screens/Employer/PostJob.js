@@ -19,11 +19,7 @@ const PostJob = () => {
     const route = useRoute();
     const editJob = route.params?.editJob || null;
 
-    // Nhận category trả về từ SelectCategory
-    const selectedCategory = route.params?.selectedCategory || null;
-
     const [openDate, setOpenDate] = useState(false);
-
     const [form, setForm] = useState({
         title: editJob?.title || '',
         location: editJob?.location || '',
@@ -40,25 +36,11 @@ const PostJob = () => {
     const [err, setErr] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // Đồng bộ category khi navigate trở về từ SelectCategory
-    // (chỉ cập nhật khi selectedCategory thay đổi và khác với form hiện tại)
-    if (
-        selectedCategory &&
-        selectedCategory.id !== form.category_id
-    ) {
-        setForm(prev => ({
-            ...prev,
-            category_id: selectedCategory.id,
-            category_name: selectedCategory.name,
-        }));
-    }
-
     const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
     const onConfirmDate = (params) => {
         setOpenDate(false);
-        const formattedDate = params.date.toISOString().split('T')[0];
-        set('deadline', formattedDate);
+        set('deadline', params.date.toISOString().split('T')[0]);
     };
 
     const validate = () => {
@@ -100,7 +82,6 @@ const PostJob = () => {
             if (status === 403) {
                 Alert.alert("Không có quyền", msg || "Tài khoản chưa được xác minh.");
             } else {
-                console.error(ex.response?.data || ex);
                 setErr("Có lỗi xảy ra. Vui lòng thử lại!");
             }
         } finally {
@@ -115,14 +96,25 @@ const PostJob = () => {
         { key: 'salary_max', label: 'Lương tối đa (VND)', icon: 'currency-usd', keyboardType: 'numeric' },
     ];
 
-    // Label hiển thị cho category
-    const categoryLabel = form.category_name || (selectedCategory?.name) || 'Chọn ngành nghề';
-    const categorySelected = !!(form.category_id || selectedCategory?.id);
+    const openSelectCategory = () => {
+        nav.navigate('select-category', {
+            onSelect: (category) => {
+                setForm(prev => ({
+                    ...prev,
+                    category_id: category.id,
+                    category_name: category.name,
+                }));
+            },
+        });
+    };
+
+    const categorySelected = !!form.category_id;
+    const categoryLabel = form.category_name || 'Chọn ngành nghề';
 
     return (
         <ScrollView style={Styles.container} contentContainerStyle={[Styles.padding, { paddingBottom: 40 }]}>
             <Text style={[Styles.subject, { marginBottom: 12 }]}>
-                {editJob ? '✏️ Sửa tin tuyển dụng' : '📝 Đăng tin tuyển dụng'}
+                {editJob ? '\u{270F}\u{FE0F} Sửa tin tuyển dụng' : '\u{1F4DD} Đăng tin tuyển dụng'}
             </Text>
 
             {err ? <HelperText type="error" visible>{err}</HelperText> : null}
@@ -139,7 +131,6 @@ const PostJob = () => {
                 />
             ))}
 
-            {/* Deadline */}
             <TextInput
                 style={Styles.input}
                 label="Hạn nộp hồ sơ *"
@@ -160,17 +151,11 @@ const PostJob = () => {
             <TextInput style={Styles.input} label="Yêu cầu ứng viên" value={form.requirements || ''} onChangeText={t => set('requirements', t)} multiline numberOfLines={4} />
             <TextInput style={Styles.input} label="Quyền lợi / Chế độ đãi ngộ" value={form.benefits || ''} onChangeText={t => set('benefits', t)} multiline numberOfLines={3} />
 
-            {/* ── NGÀNH NGHỀ: navigate sang SelectCategory ── */}
             <Text style={{ fontWeight: '700', color: COLORS.primary, marginTop: 12, marginBottom: 6 }}>
                 Ngành nghề:
             </Text>
             <TouchableOpacity
-                onPress={() =>
-                    nav.navigate('select-category', {
-                        fromScreen: 'post-job',   // tên screen để navigate back về
-                        returnKey: 'selectedCategory',
-                    })
-                }
+                onPress={openSelectCategory}
                 activeOpacity={0.75}
                 style={{
                     flexDirection: 'row',
@@ -191,7 +176,6 @@ const PostJob = () => {
                 <Icon source="chevron-right" size={20} color={COLORS.primary} />
             </TouchableOpacity>
 
-            {/* Kinh nghiệm */}
             <Text style={{ fontWeight: '700', color: COLORS.primary, marginTop: 4, marginBottom: 4 }}>
                 Kinh nghiệm yêu cầu:
             </Text>

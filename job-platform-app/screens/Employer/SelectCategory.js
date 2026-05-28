@@ -8,8 +8,7 @@ import { COLORS } from "../../styles/Styles";
 const SelectCategory = () => {
     const nav = useNavigation();
     const route = useRoute();
-
-    const returnKey = route.params?.returnKey || "selectedCategory";
+    const onSelect = route.params?.onSelect;
 
     const [allCategories, setAllCategories] = useState([]);
     const [filtered, setFiltered] = useState([]);
@@ -35,37 +34,28 @@ const SelectCategory = () => {
                 setFiltered(allCategories);
             } else {
                 const lower = text.toLowerCase();
-                setFiltered(
-                    allCategories.filter((c) =>
-                        c.name.toLowerCase().includes(lower)
-                    )
-                );
+                setFiltered(allCategories.filter((c) => c.name.toLowerCase().includes(lower)));
             }
         },
         [allCategories]
     );
 
     const handleSelect = (category) => {
-        nav.navigate(route.params?.fromScreen, {
-            [returnKey]: { id: String(category.id), name: category.name },
-        });
+        if (onSelect) onSelect({ id: String(category.id), name: category.name });
+        nav.goBack();
     };
 
-    if (loading) {
-        return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-            </View>
-        );
-    }
+    if (loading) return (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+    );
 
-    if (error) {
-        return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
-                <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>
-            </View>
-        );
-    }
+    if (error) return (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
+            <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>
+        </View>
+    );
 
     return (
         <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -76,7 +66,6 @@ const SelectCategory = () => {
                 style={{ margin: 12, elevation: 2 }}
                 inputStyle={{ fontSize: 15 }}
             />
-
             {filtered.length === 0 ? (
                 <View style={{ alignItems: "center", marginTop: 40 }}>
                     <Text style={{ color: "#999" }}>Không tìm thấy ngành nghề nào.</Text>
@@ -85,22 +74,14 @@ const SelectCategory = () => {
                 <FlatList
                     data={filtered}
                     keyExtractor={(item) => String(item.id)}
-                    ItemSeparatorComponent={() => (
-                        <View style={{ height: 1, backgroundColor: "#f0f0f0" }} />
-                    )}
+                    ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: "#f0f0f0" }} />}
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             onPress={() => handleSelect(item)}
                             activeOpacity={0.7}
-                            style={{
-                                paddingVertical: 16,
-                                paddingHorizontal: 20,
-                                backgroundColor: "#fff",
-                            }}
+                            style={{ paddingVertical: 16, paddingHorizontal: 20, backgroundColor: "#fff" }}
                         >
-                            <Text style={{ fontSize: 15, color: COLORS.text ?? "#222" }}>
-                                {item.name}
-                            </Text>
+                            <Text style={{ fontSize: 15, color: COLORS.text ?? "#222" }}>{item.name}</Text>
                         </TouchableOpacity>
                     )}
                 />

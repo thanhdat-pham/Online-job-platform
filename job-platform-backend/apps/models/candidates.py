@@ -21,6 +21,8 @@ class CandidateProfile(models.Model):
 
     class Meta:
         db_table = "candidate_profile"
+        verbose_name = "Hồ sơ ứng viên"
+        verbose_name_plural = "Hồ sơ ứng viên"
 
     def __str__(self):
         return f"Hồ sơ: {self.full_name} ({self.user.email})"
@@ -52,24 +54,11 @@ class Application(models.Model):
         db_table = "applications"
         unique_together = ('candidate', 'job')
         ordering = ['-applied_at']
+        verbose_name = "Hồ sơ ứng tuyển"
+        verbose_name_plural = "Hồ sơ ứng tuyển"
 
     def __str__(self):
         return f"{self.candidate.full_name} nộp vào {self.job.title}"
-
-
-class Interview(models.Model):
-    application = models.OneToOneField(
-        'Application', on_delete=models.CASCADE,
-        related_name='interview', verbose_name="Đơn ứng tuyển"
-    )
-    start_time = models.DateTimeField(verbose_name="Thời gian bắt đầu")
-    end_time = models.DateTimeField(verbose_name="Thời gian kết thúc", null=True, blank=True)
-    location = models.CharField(max_length=255, verbose_name="Địa điểm/Link họp")
-    interview_note = models.TextField(blank=True, null=True, verbose_name="Ghi chú phỏng vấn")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Phỏng vấn: {self.application.candidate.full_name} - {self.start_time.strftime('%d/%m/%Y')}"
 
 
 class SavedJob(models.Model):

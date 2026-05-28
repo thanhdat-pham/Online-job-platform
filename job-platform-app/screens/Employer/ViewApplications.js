@@ -7,10 +7,10 @@ import Styles, { COLORS } from "../../styles/Styles";
 import { useNavigation } from "@react-navigation/native";
 
 const STATUS_OPTIONS = [
-    { value: 'reviewed', label: '📖 Đã xem xét', display: 'Đã xem xét' },
-    { value: 'interviewing', label: '📞 Mời phỏng vấn', display: 'Phỏng vấn' },
-    { value: 'accepted', label: '✅ Chấp nhận', display: 'Chấp nhận' },
-    { value: 'rejected', label: '❌ Từ chối', display: 'Từ chối' },
+    { value: 'reviewed', label: '\u{1F4D6} Đã xem xét', display: 'Đã xem xét' },
+    { value: 'interviewing', label: '\u{1F4DE} Mới phỏng vấn', display: 'Phỏng vấn' },
+    { value: 'accepted', label: '\u{2705} Chấp nhận', display: 'Chấp nhận' },
+    { value: 'rejected', label: '\u{274C} Từ chối', display: 'Từ chối' },
 ];
 
 const statusInfo = {
@@ -32,7 +32,6 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
 
     const updateRating = (val) => {
         onUpdate(item.id, { rating: val });
-
         AsyncStorage.getItem('token').then(token => {
             authApis(token).post(endpoints['review-application'](jobId), {
                 application_id: item.id,
@@ -93,14 +92,15 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
             </View>
 
             {item.cover_letter ? (
-                <Text style={{ color: COLORS.text, marginTop: 8, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>📄 {item.cover_letter}</Text>
+                <Text style={{ color: COLORS.text, marginTop: 8, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>{'\u{1F4C4} '}{item.cover_letter}</Text>
             ) : null}
 
             {item.employers_note ? (
                 <View style={{ marginTop: 6, padding: 8, backgroundColor: '#FFF9C4', borderRadius: 6 }}>
-                    <Text style={{ fontSize: 12, color: '#5D4037' }}>📝 Ghi chú: {item.employers_note}</Text>
+                    <Text style={{ fontSize: 12, color: '#5D4037' }}>{'\u{1F4DD} '}Ghi chú: {item.employers_note}</Text>
                 </View>
             ) : null}
+
             <View style={{ flexDirection: 'row', marginTop: 10, alignItems: 'center' }}>
                 <Text style={{ fontSize: 12, color: COLORS.textLight, marginRight: 8 }}>Đánh giá:</Text>
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -109,17 +109,18 @@ const AppCard = ({ item, jobId, onUpdate, onViewProfile }) => {
                         onPress={() => updateRating(star)}
                         style={{ fontSize: 24, paddingHorizontal: 2 }}
                     >
-                        {star <= (item.rating || 0) ? "⭐" : "☆"}
+                        {star <= (item.rating || 0) ? "\u{2B50}" : "\u{2606}"}
                     </Text>
                 ))}
             </View>
+
             <View style={[Styles.row, { marginTop: 10, flexWrap: 'wrap', gap: 6 }]}>
-                <Button compact mode="outlined" icon="account" onPress={() => onViewProfile(item.candidate)}>Xem hồ sơ</Button>
+                <Button compact mode="outlined" icon="account" onPress={() => onViewProfile(item.candidate_user_id)}>Xem hồ sơ</Button>
                 <Button compact mode="outlined" icon="note-edit" onPress={() => setNoteVisible(!noteVisible)}>Ghi chú</Button>
                 <Menu
                     visible={menuVisible}
                     onDismiss={() => setMenuVisible(false)}
-                    anchor={<Button compact mode="outlined" onPress={() => setMenuVisible(true)}>Trạng thái ▾</Button>}
+                    anchor={<Button compact mode="outlined" onPress={() => setMenuVisible(true)}>Trạng thái {'\u25BE'}</Button>}
                 >
                     {STATUS_OPTIONS.map(s => (
                         <Menu.Item key={s.value} onPress={() => updateStatus(s.value)} title={s.label} />
@@ -170,7 +171,7 @@ const ViewApplications = () => {
             const data = res.data.results ?? res.data;
             setJobs(data);
             if (data.length > 0) setSelectedJob(data[0]);
-        } catch (ex) { console.error(ex); }
+        } catch (ex) { }
         finally { setLoadingJobs(false); }
     };
 
@@ -179,9 +180,10 @@ const ViewApplications = () => {
         try {
             setLoadingApps(true);
             const token = await AsyncStorage.getItem('token');
-            const res = await authApis(token).get(endpoints['employer-job-applications'](job.id));
+            const url = endpoints['employer-job-applications'](job.id);
+            const res = await authApis(token).get(url);
             setApps(res.data.results ?? res.data);
-        } catch (ex) { console.error(ex); }
+        } catch (ex) { }
         finally { setLoadingApps(false); }
     };
 
@@ -210,7 +212,7 @@ const ViewApplications = () => {
                     style={{ padding: 12, backgroundColor: '#f0f0f0', borderRadius: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
                 >
                     <Text style={{ flex: 1 }} numberOfLines={1}>{selectedJob?.title || "Chọn tin..."}</Text>
-                    <Text>▼</Text>
+                    <Text>{'\u{25BC}'}</Text>
                 </TouchableOpacity>
             </View>
 

@@ -166,7 +166,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-# Khi đóng trình duyệt, Session sẽ hết hạn ngay lập tức
+
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
 CLIENT_ID = os.getenv('OAUTH2_CLIENT_ID')

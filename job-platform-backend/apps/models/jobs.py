@@ -7,6 +7,8 @@ class JobCategory(models.Model):
     
     class Meta:
         db_table = "job_category"
+        verbose_name = "Ngành nghề"
+        verbose_name_plural = "Ngành nghề"
 
     def __str__(self):
         return self.name
@@ -57,7 +59,8 @@ class Job(models.Model):
 
     class Meta:
         db_table = "job"
-
+        verbose_name = "công việc"
+        verbose_name_plural = "công việc"
 
     def __str__(self):
         return self.title

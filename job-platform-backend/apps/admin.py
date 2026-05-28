@@ -20,7 +20,7 @@ def _notify_verification(employer, approved, note=''):
             msg += f' Ghi chú từ admin: {note}'
         Notification.objects.create(
             user=employer,
-            title='✅ Tài khoản đã được xác minh',
+            title='\u2705 Tài khoản đã được xác minh',
             message=msg,
             notification_type='employer_verify',
         )
@@ -30,7 +30,7 @@ def _notify_verification(employer, approved, note=''):
             msg += f' Lý do: {note}'
         Notification.objects.create(
             user=employer,
-            title='❌ Yêu cầu xác minh bị từ chối',
+            title='\u274c Yêu cầu xác minh bị từ chối',
             message=msg,
             notification_type='employer_verify',
         )
@@ -89,7 +89,7 @@ class VerificationRequestAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
         if obj.status == 'approved':
-            User.objects.filter(pk=obj.employer.pk).update(is_verified=True, rejection_reason='')
+            User.objects.filter(pk=obj.employer.pk).update(is_verified=True)
             user = obj.employer
             if hasattr(user, 'employer_profile') and user.employer_profile.company:
                 company = user.employer_profile.company
@@ -102,18 +102,18 @@ class VerificationRequestAdmin(admin.ModelAdmin):
             User.objects.filter(pk=obj.employer.pk).update(is_verified=False)
             _notify_verification(obj.employer, approved=False, note=obj.note)
 
-    @admin.action(description='✅ Duyệt các yêu cầu đã chọn')
+    @admin.action(description='\u2705 Duyệt các yêu cầu đã chọn')
     def approve_requests(self, request, queryset):
         for vr in queryset:
             vr.status = 'approved'
             vr.reviewed_at = timezone.now()
             vr.reviewed_by = request.user
             vr.save()
-            User.objects.filter(pk=vr.employer.pk).update(is_verified=True, rejection_reason='')
+            User.objects.filter(pk=vr.employer.pk).update(is_verified=True)
             _notify_verification(vr.employer, approved=True, note=vr.note)
         self.message_user(request, f"Đã duyệt {queryset.count()} yêu cầu.")
 
-    @admin.action(description='❌ Từ chối các yêu cầu đã chọn')
+    @admin.action(description='\u274c Từ chối các yêu cầu đã chọn')
     def reject_requests(self, request, queryset):
         for vr in queryset:
             vr.status = 'rejected'
@@ -127,16 +127,22 @@ class VerificationRequestAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display  = ('email', 'username', 'role', 'is_verified', 'is_staff')
-    list_filter   = ('role', 'is_verified', 'is_active')
-    search_fields = ('email', 'username', 'phone_number')
-    ordering      = ('-created_date',)
-    readonly_fields = ('avatar',)
+    list_display    = ('email', 'username', 'role', 'is_verified', 'is_staff')
+    list_filter     = ('role', 'is_verified', 'is_active')
+    search_fields   = ('email', 'username', 'phone_number')
+    ordering        = ('-created_date',)
+    readonly_fields = ('get_avatar',)
     fieldsets = (
         ("Tài khoản",           {"fields": ("username",)}),
-        ("Thông tin cá nhân",   {"fields": ("email", "phone_number", "avatar")}),
-        ("Vai trò & Phê duyệt", {"fields": ("role", "is_verified", "rejection_reason", "is_active", "is_staff", "is_superuser")}),
+        ("Thông tin cá nhân",   {"fields": ("email", "phone_number", "get_avatar")}),
+        ("Vai trò & Phê duyệt", {"fields": ("role", "is_verified", "is_active", "is_staff", "is_superuser")}),
     )
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            return format_html('<img src="{}" width="100" height="100" style="border-radius:50%; object-fit:cover;" />', obj.avatar.url)
+        return 'Chưa có ảnh'
+    get_avatar.short_description = 'Ảnh đại diện'
 
 
 @admin.register(CandidateProfile)
@@ -149,7 +155,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = ('candidate', 'job', 'status', 'applied_at')
     list_filter  = ('status',)
-    exclude = ('cover_letter',)
+    exclude      = ('cover_letter',)
 
 
 @admin.register(Company)
@@ -161,7 +167,6 @@ class CompanyAdmin(admin.ModelAdmin):
 @admin.register(Employer)
 class EmployerAdmin(admin.ModelAdmin):
     list_display = ('user', 'company', 'position', 'full_name')
-    exclude = ('company_size',)
 
 
 @admin.register(JobCategory)

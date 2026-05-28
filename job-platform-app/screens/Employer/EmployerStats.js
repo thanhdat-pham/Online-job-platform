@@ -7,8 +7,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
 import { COLORS } from "../../styles/Styles";
 
-
-
 const StatCard = ({ icon, label, value, sub, color }) => (
     <View style={s.statCard}>
         <Text style={s.statIcon}>{icon}</Text>
@@ -55,14 +53,12 @@ const TrendChart = ({ data }) => {
                         <Text style={s.barLabel}>{d.label}</Text>
                         <Text style={s.barCount}>{d.total} hồ sơ</Text>
                     </View>
-                    {/* tổng */}
                     <View style={s.barTrack}>
                         <View style={[s.barFill, {
                             width: `${(d.total / max) * 100}%`,
                             backgroundColor: COLORS.primary,
                         }]} />
                     </View>
-                    {/* accepted */}
                     {d.accepted > 0 && (
                         <View style={[s.barTrack, { marginTop: 3, height: 5 }]}>
                             <View style={[s.barFill, {
@@ -98,12 +94,12 @@ const JobTable = ({ data }) => {
                     <View style={{ flex: 1, marginRight: 8 }}>
                         <Text style={s.jobTitle} numberOfLines={1}>{j.title}</Text>
                         <Text style={s.jobMeta}>
-                            👁 {j.views}  ·  📄 {j.applications} hồ sơ  ·  ✅ {j.accepted} trúng
+                            {'\u{1F441}'} {j.views}  ·  {'\u{1F4C4}'} {j.applications} hồ sơ  ·  {'\u{2705}'} {j.accepted} trúng
                         </Text>
                     </View>
                     <View style={s.ratingBadge}>
                         <Text style={s.ratingText}>
-                            {j.avg_rating ? `⭐ ${j.avg_rating}` : "—"}
+                            {j.avg_rating ? `\u{2B50} ${j.avg_rating}` : "—"}
                         </Text>
                     </View>
                 </View>
@@ -111,8 +107,6 @@ const JobTable = ({ data }) => {
         </View>
     );
 };
-
-
 
 const PERIODS = [
     { key: 'month', label: 'Theo tháng' },
@@ -134,7 +128,6 @@ const EmployerStats = () => {
             );
             setStats(res.data);
         } catch (ex) {
-            console.error(ex);
         } finally {
             setLoading(false);
         }
@@ -147,23 +140,22 @@ const EmployerStats = () => {
 
     return (
         <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 40 }}>
-            <Text style={s.title}>📊 Thống kê tuyển dụng</Text>
+            <Text style={s.title}>{'\u{1F4CA}'} Thống kê tuyển dụng</Text>
 
-            {/* ── Tổng quan ── */}
             <View style={s.cardRow}>
-                <StatCard icon="📋" label="Tin đăng" value={stats?.total_jobs} color={COLORS.primary} />
-                <StatCard icon="👥" label="Tổng hồ sơ" value={total} color="#1565c0" />
-                <StatCard icon="👁" label="Lượt xem" value={stats?.total_views} color="#6a1b9a" />
+                <StatCard icon={'\u{1F4CB}'} label="Tin đăng" value={stats?.total_jobs} color={COLORS.primary} />
+                <StatCard icon={'\u{1F465}'} label="Tổng hồ sơ" value={total} color="#1565c0" />
+                <StatCard icon={'\u{1F441}'} label="Lượt xem" value={stats?.total_views} color="#6a1b9a" />
             </View>
             <View style={s.cardRow}>
                 <StatCard
-                    icon="✅"
+                    icon={'\u{2705}'}
                     label="Tỉ lệ chấp nhận"
                     value={stats ? `${stats.acceptance_rate}%` : "—"}
                     color="#2e7d32"
                 />
                 <StatCard
-                    icon="⭐"
+                    icon={'\u{2B50}'}
                     label="Điểm TB ứng viên"
                     value={stats?.avg_rating ?? "Chưa có"}
                     sub="(thang 1–5)"
@@ -171,9 +163,8 @@ const EmployerStats = () => {
                 />
             </View>
 
-            {/* ── Chất lượng hồ sơ ── */}
             <View style={s.section}>
-                <Text style={s.sectionTitle}>📂 Chất lượng hồ sơ</Text>
+                <Text style={s.sectionTitle}>{'\u{1F4C2}'} Chất lượng hồ sơ</Text>
                 {loading
                     ? <ActivityIndicator color={COLORS.primary} />
                     : <>
@@ -185,9 +176,8 @@ const EmployerStats = () => {
                 }
             </View>
 
-            {/* ── Xu hướng theo kỳ ── */}
             <View style={s.section}>
-                <Text style={s.sectionTitle}>📈 Xu hướng ứng tuyển</Text>
+                <Text style={s.sectionTitle}>{'\u{1F4C8}'} Xu hướng ứng tuyển</Text>
                 <View style={s.tabRow}>
                     {PERIODS.map(p => (
                         <PeriodTab
@@ -204,9 +194,8 @@ const EmployerStats = () => {
                 }
             </View>
 
-            {/* ── Hiệu quả từng tin ── */}
             <View style={s.section}>
-                <Text style={s.sectionTitle}>🏆 Hiệu quả từng tin đăng</Text>
+                <Text style={s.sectionTitle}>{'\u{1F3C6}'} Hiệu quả từng tin đăng</Text>
                 <Text style={s.sectionNote}>Top 10 tin có nhiều hồ sơ nhất</Text>
                 {loading
                     ? <ActivityIndicator color={COLORS.primary} />
@@ -216,8 +205,6 @@ const EmployerStats = () => {
         </ScrollView>
     );
 };
-
-
 
 const s = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f5f5f5' },

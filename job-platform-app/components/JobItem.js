@@ -28,7 +28,7 @@ const JobItem = ({ item, onPress, filters }) => {
                     />
                 ) : (
                     <View style={{ width: 44, height: 44, borderRadius: 8, backgroundColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 20 }}>🏢</Text>
+                        <Text style={{ fontSize: 20 }}>{'\u{1F3E2}'}</Text>
                     </View>
                 )}
                 <View style={{ flex: 1 }}>
@@ -42,12 +42,12 @@ const JobItem = ({ item, onPress, filters }) => {
                         <View style={{ marginTop: 6, gap: 2 }}>
                             {(filters.location || filters.salary_min || filters.salary_max) && (
                                 <Text numberOfLines={1} style={{ fontSize: 12, color: COLORS.textLight }}>
-                                    📍 {item.location || 'Không xác định'}
+                                    {'\u{1F4CD} '}{item.location || 'Không xác định'}
                                 </Text>
                             )}
                             {(filters.salary_min || filters.salary_max) && (
                                 <Text numberOfLines={1} style={{ fontSize: 12, color: '#16a34a', fontWeight: '600' }}>
-                                    💰 {salary}
+                                    {'\u{1F4B5} '}{salary}
                                 </Text>
                             )}
                         </View>
