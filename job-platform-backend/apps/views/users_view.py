@@ -81,7 +81,9 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         methods=['post'],
         url_path='change-password',
         detail=False,
-        permission_classes=[permissions.IsAuthenticated]
+        permission_classes=[permissions.IsAuthenticated],
+
+        parser_classes=[parsers.JSONParser, parsers.FormParser, parsers.MultiPartParser],
     )
     def change_password(self, request):
         user = request.user
@@ -95,7 +97,16 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
 
         user.set_password(new_password)
         user.save()
-        return Response({"detail": "Đổi mật khẩu thành công!"}, status=status.HTTP_200_OK)
+
+
+        token = request.auth
+        if token:
+            token.delete()
+
+        return Response(
+            {"detail": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại."},
+            status=status.HTTP_200_OK
+        )
 
     @action(
         methods=['post'],
