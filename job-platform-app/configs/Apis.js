@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://10.0.2.2:8000/"
+const BASE_URL = "http://192.168.1.5:8000/"
 
 export const endpoints = {
     'login': '/users/login/',
@@ -35,8 +35,8 @@ export const endpoints = {
     'notifications-read-all': '/notifications/read-all/',
     'notifications-unread-count': '/notifications/unread-count/',
 
-    'request-verification': '/employer/profile/request-verification/',
-    'verification-status': '/employer/profile/verification-status/',
+    'request-verification': '/employer-profile/request-verification/',
+    'verification-status': '/employer-profile/verification-status/',
     'job-categories': '/categories/',
 };
 

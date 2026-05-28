@@ -190,6 +190,30 @@ class EmployerJobViewSet(viewsets.ModelViewSet):
             app.employers_note = employers_note
         app.save()
 
+        status_labels = {
+            'reviewed':     'Ho so cua ban da duoc xem xet',
+            'interviewing': 'Ban duoc moi phong van',
+            'accepted':     'Chuc mung! Ban da trung tuyen',
+            'rejected':     'Ho so cua ban khong phu hop',
+        }
+        if new_status and new_status in status_labels:
+            try:
+                from apps.models.notification import Notification
+                company_name = job.employer.company.name if job.employer.company else 'Nha tuyen dung'
+                msg = f'{status_labels[new_status]} cho vi tri "{job.title}" tai {company_name}.'
+                if rating:
+                    msg += f' Diem danh gia: {rating}/5.'
+                if employers_note:
+                    msg += f' Ghi chu: {employers_note}'
+                Notification.objects.create(
+                    user=app.candidate.user,
+                    title=status_labels[new_status],
+                    message=msg,
+                    notification_type='application_update',
+                )
+            except Exception:
+                pass
+
         return Response(ApplicationSerializer(app).data)
 
     @action(detail=False, methods=['get'], url_path='stats')
