@@ -1,16 +1,23 @@
-import { useState } from "react";
-import { View, Alert, ScrollView } from "react-native";
+import { useContext, useState } from "react";
+import { Alert, ScrollView } from "react-native";
 import { TextInput, Button, HelperText } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
+import { MyUserContext } from "../../configs/Contexts";
 import Styles, { COLORS } from "../../styles/Styles";
 
 const ChangePassword = ({ navigation }) => {
+    const [, dispatch] = useContext(MyUserContext);
+
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirm, setConfirm] = useState("");
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState("");
+
+    const [showOld, setShowOld] = useState(false);
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleSubmit = async () => {
         setErr("");
@@ -33,11 +40,32 @@ const ChangePassword = ({ navigation }) => {
                 old_password: oldPassword,
                 new_password: newPassword,
             });
-            Alert.alert("Thành công", "Đổi mật khẩu thành công!", [
-                { text: "OK", onPress: () => navigation.goBack() },
-            ]);
+
+            await AsyncStorage.removeItem("token");
+
+            Alert.alert(
+                "Thành công",
+                "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
+                [
+                    {
+                        text: "OK",
+                        onPress: () => {
+
+                            dispatch({ type: "LOGOUT" });
+
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: "main-tabs" }],
+                            });
+                        },
+                    },
+                ]
+            );
         } catch (e) {
-            const msg = e?.response?.data?.detail || "Đổi mật khẩu thất bại.";
+            const msg =
+                e?.response?.data?.detail ||
+                e?.response?.data?.old_password?.[0] ||
+                "Đổi mật khẩu thất bại.";
             setErr(msg);
         } finally {
             setLoading(false);
@@ -45,29 +73,54 @@ const ChangePassword = ({ navigation }) => {
     };
 
     return (
-        <ScrollView style={Styles.container} contentContainerStyle={[Styles.padding, { paddingBottom: 40 }]}>
+        <ScrollView
+            style={Styles.container}
+            contentContainerStyle={[Styles.padding, { paddingBottom: 40 }]}
+        >
             <TextInput
                 label="Mật khẩu cũ"
                 value={oldPassword}
                 onChangeText={setOldPassword}
-                secureTextEntry
+                secureTextEntry={!showOld}
                 style={Styles.input}
+                right={
+                    <TextInput.Icon
+                        icon={showOld ? "eye-off" : "eye"}
+                        onPress={() => setShowOld(!showOld)}
+                    />
+                }
             />
             <TextInput
                 label="Mật khẩu mới"
                 value={newPassword}
                 onChangeText={setNewPassword}
-                secureTextEntry
+                secureTextEntry={!showNew}
                 style={Styles.input}
+                right={
+                    <TextInput.Icon
+                        icon={showNew ? "eye-off" : "eye"}
+                        onPress={() => setShowNew(!showNew)}
+                    />
+                }
             />
             <TextInput
                 label="Xác nhận mật khẩu mới"
                 value={confirm}
                 onChangeText={setConfirm}
-                secureTextEntry
+                secureTextEntry={!showConfirm}
                 style={Styles.input}
+                right={
+                    <TextInput.Icon
+                        icon={showConfirm ? "eye-off" : "eye"}
+                        onPress={() => setShowConfirm(!showConfirm)}
+                    />
+                }
             />
-            {err ? <HelperText type="error" visible>{err}</HelperText> : null}
+            {err ? (
+                <HelperText type="error" visible>
+                    {err}
+                </HelperText>
+            ) : null}
             <Button
                 mode="contained"
                 onPress={handleSubmit}
