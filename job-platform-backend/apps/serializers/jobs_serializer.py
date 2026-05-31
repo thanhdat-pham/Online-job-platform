@@ -28,7 +28,7 @@ class JobSerializer(serializers.ModelSerializer):
         queryset=JobCategory.objects.all(),
         source='category',
         write_only=True,
-        required=False,
+        required=True,
         allow_null=True
     )
     is_saved = serializers.SerializerMethodField()
