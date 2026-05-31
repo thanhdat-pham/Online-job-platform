@@ -78,7 +78,7 @@ class VerificationRequest(models.Model):
         max_length=20, choices=STATUS_CHOICES,
         default='pending', verbose_name="Trạng thái"
     )
-    note = models.TextField(blank=True, verbose_name="Lý do từ chối")
+    note = models.TextField(blank=True, verbose_name="Ghi chú")
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
     reviewed_by = models.ForeignKey(
@@ -86,12 +86,10 @@ class VerificationRequest(models.Model):
         null=True, blank=True,
         related_name='reviewed_requests'
     )
-
     class Meta:
         db_table = "verification_requests"
         verbose_name = "Yêu cầu xác minh NTD"
         verbose_name_plural = "Yêu cầu xác minh NTD"
         ordering = ['-submitted_at']
-
     def __str__(self):
         return f"{self.employer.email} — {self.get_status_display()}"

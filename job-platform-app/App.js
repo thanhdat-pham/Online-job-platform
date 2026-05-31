@@ -171,7 +171,7 @@ const App = () => {
               options={{
                 title: "Đổi mật khẩu",
                 headerStyle: { backgroundColor: COLORS.primary },
-                headerTintColor: "#fff",
+                headerTintColor: "#651c1c",
                 headerTitleStyle: { fontWeight: "700" },
               }}
             />

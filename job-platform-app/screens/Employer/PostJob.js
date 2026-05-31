@@ -1,11 +1,10 @@
-import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
+import { ScrollView, View, Alert, TouchableOpacity, Modal, FlatList } from "react-native";
 import { TextInput, Button, Text, HelperText, RadioButton, Icon } from "react-native-paper";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApis, endpoints } from "../../configs/Apis";
 import Styles, { COLORS } from "../../styles/Styles";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { DatePickerModal } from 'react-native-paper-dates';
 
 const EXPERIENCE_LEVELS = [
     { value: 'no_exp', label: 'Chưa có kinh nghiệm' },
@@ -14,12 +13,70 @@ const EXPERIENCE_LEVELS = [
     { value: 'senior', label: 'Trên 5 năm' },
 ];
 
+const ITEM_HEIGHT = 48;
+
+const SpinnerColumn = ({ data, selectedIndex, onIndexChange }) => {
+    const ref = useRef(null);
+
+    const onMomentumScrollEnd = (e) => {
+        const index = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+        onIndexChange(Math.max(0, Math.min(index, data.length - 1)));
+    };
+
+    return (
+        <View style={{ flex: 1, height: ITEM_HEIGHT * 3, overflow: 'hidden' }}>
+            <View pointerEvents="none" style={{
+                position: 'absolute', top: ITEM_HEIGHT, left: 0, right: 0, height: ITEM_HEIGHT,
+                borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.primary, zIndex: 1
+            }} />
+            <ScrollView
+                ref={ref}
+                showsVerticalScrollIndicator={false}
+                snapToInterval={ITEM_HEIGHT}
+                decelerationRate="normal"
+                onMomentumScrollEnd={onMomentumScrollEnd}
+                contentOffset={{ y: selectedIndex * ITEM_HEIGHT }}
+                contentContainerStyle={{ paddingVertical: ITEM_HEIGHT }}
+            >
+                {data.map((item, i) => (
+                    <View key={i} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 16, color: i === selectedIndex ? COLORS.primary : '#999' }}>
+                            {item.label}
+                        </Text>
+                    </View>
+                ))}
+            </ScrollView>
+        </View>
+    );
+};
+
+const buildDateData = () => {
+    const now = new Date();
+    const months = Array.from({ length: 12 }, (_, i) => ({
+        label: `Tháng ${i + 1}`, value: i
+    }));
+    const days = Array.from({ length: 31 }, (_, i) => ({
+        label: `${i + 1}`, value: i + 1
+    }));
+    const years = Array.from({ length: 10 }, (_, i) => ({
+        label: `${now.getFullYear() + i}`, value: now.getFullYear() + i
+    }));
+    return { months, days, years };
+};
+
+const { months, days, years } = buildDateData();
+
 const PostJob = () => {
     const nav = useNavigation();
     const route = useRoute();
     const editJob = route.params?.editJob || null;
 
+    const now = new Date();
     const [openDate, setOpenDate] = useState(false);
+    const [monthIdx, setMonthIdx] = useState(now.getMonth());
+    const [dayIdx, setDayIdx] = useState(now.getDate() - 1);
+    const [yearIdx, setYearIdx] = useState(0);
+
     const [form, setForm] = useState({
         title: editJob?.title || '',
         location: editJob?.location || '',
@@ -38,9 +95,25 @@ const PostJob = () => {
 
     const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
-    const onConfirmDate = (params) => {
+    const openDatePicker = () => {
+        if (form.deadline) {
+            const d = new Date(form.deadline);
+            setMonthIdx(d.getMonth());
+            setDayIdx(d.getDate() - 1);
+            setYearIdx(Math.max(0, d.getFullYear() - now.getFullYear()));
+        }
+        setOpenDate(true);
+    };
+
+    const confirmDate = () => {
+        const y = years[yearIdx].value;
+        const m = months[monthIdx].value;
+        const d = days[dayIdx].value;
+        const date = new Date(y, m, d);
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        set('deadline', `${date.getFullYear()}-${mm}-${dd}`);
         setOpenDate(false);
-        set('deadline', params.date.toISOString().split('T')[0]);
     };
 
     const validate = () => {
@@ -136,16 +209,25 @@ const PostJob = () => {
                 label="Hạn nộp hồ sơ *"
                 value={form.deadline}
                 editable={false}
-                right={<TextInput.Icon icon="calendar" onPress={() => setOpenDate(true)} />}
+                right={<TextInput.Icon icon="calendar" onPress={openDatePicker} />}
             />
-            <DatePickerModal
-                locale="vi"
-                mode="single"
-                visible={openDate}
-                onDismiss={() => setOpenDate(false)}
-                date={form.deadline ? new Date(form.deadline) : new Date()}
-                onConfirm={onConfirmDate}
-            />
+
+            <Modal visible={openDate} transparent animationType="slide">
+                <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                    <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 24 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' }}>
+                            <Button onPress={() => setOpenDate(false)} textColor="#999">Hủy</Button>
+                            <Text style={{ alignSelf: 'center', fontWeight: '700', fontSize: 15, color: COLORS.primary }}>Chọn ngày</Text>
+                            <Button onPress={confirmDate} textColor={COLORS.primary}>Xong</Button>
+                        </View>
+                        <View style={{ flexDirection: 'row', paddingHorizontal: 8 }}>
+                            <SpinnerColumn data={months} selectedIndex={monthIdx} onIndexChange={setMonthIdx} />
+                            <SpinnerColumn data={days} selectedIndex={dayIdx} onIndexChange={setDayIdx} />
+                            <SpinnerColumn data={years} selectedIndex={yearIdx} onIndexChange={setYearIdx} />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             <TextInput style={Styles.input} label="Mô tả công việc *" value={form.description || ''} onChangeText={t => set('description', t)} multiline numberOfLines={5} />
             <TextInput style={Styles.input} label="Yêu cầu ứng viên" value={form.requirements || ''} onChangeText={t => set('requirements', t)} multiline numberOfLines={4} />
